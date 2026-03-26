@@ -6,7 +6,6 @@
 #include "Game/GameCommon.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Core/Engine.hpp"
-#include "Game/Entity.hpp"
 
 bool g_debugDraw = false;
 //BitmapFont*	g_defaultFont	= nullptr;

@@ -1,8 +1,10 @@
 #include "Game/Player.hpp"
-
+#include "Game/Game.hpp"
+#include "Engine/Core/Engine.hpp"
+#include "Engine/Input/InputSystem.hpp"
 
 Player::Player(Game* owner)
-	:Entity(owner)
+	:m_game(owner)
 {
 }
 
@@ -103,4 +105,14 @@ bool Player::UpdateFromInput(float deltaSeconds)
 		m_moveSpeed = 1.f;
 	}
 	return 1;
+}
+
+Mat44 Player::GetModelToWorldTransform() const
+{
+	// make a translation matrix, make a rotation matrix, append rotation to translation
+	Mat44 translationMatrix = Mat44();
+	translationMatrix.AppendTranslation3D(m_position);
+	Mat44 rotationMatrix = m_orientation.GetAsMatrix_IFwd_JLeft_KUp();
+	translationMatrix.Append(rotationMatrix);
+	return translationMatrix;
 }

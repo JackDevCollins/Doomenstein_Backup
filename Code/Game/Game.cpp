@@ -2,7 +2,6 @@
 #include "Game/App.hpp"
 #include "Game/GameCommon.hpp"
 #include "Game/Player.hpp"
-#include "Game/Prop.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Renderer/Camera.hpp"
 #include "Engine/Core/Rgba8.hpp"
@@ -58,59 +57,10 @@ void Game::Startup()
 	m_player->m_position = Vec3(-2,0,0);
 	m_worldCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation );
 	
-	Prop* Cube1 = new Prop(this);
-
-	AddVertsForQuad3D(Cube1->m_vertexes, Vec3(0.5, -0.5, -0.5), Vec3(0.5, 0.5, -0.5), Vec3(0.5, 0.5, 0.5), Vec3(0.5, -0.5, 0.5), Rgba8::RED, AABB2(Vec2(0.5, -0.5), Vec2(0.5, 0.5)));
-	AddVertsForQuad3D(Cube1->m_vertexes, Vec3(-0.5, 0.5, -0.5), Vec3(-0.5, -0.5, -0.5), Vec3(-0.5, -0.5, 0.5), Vec3(-0.5, 0.5, 0.5), Rgba8::CYAN, AABB2(Vec2(-0.5, 0.5), Vec2(-0.5, -0.5)));
-	AddVertsForQuad3D(Cube1->m_vertexes, Vec3(-0.5, -0.5, -0.5), Vec3(0.5, -0.5, -0.5), Vec3(0.5, -0.5, 0.5), Vec3(-0.5, -0.5, 0.5), Rgba8::MAGENTA, AABB2(Vec2(-0.5, -0.5), Vec2(0.5, -0.5)));
-	AddVertsForQuad3D(Cube1->m_vertexes, Vec3(0.5, 0.5, -0.5), Vec3(-0.5, 0.5, -0.5), Vec3(-0.5, 0.5, 0.5), Vec3(0.5, 0.5, 0.5), Rgba8::GREEN, AABB2(Vec2(0.5, 0.5), Vec2(-0.5, 0.5)));
-	AddVertsForQuad3D(Cube1->m_vertexes, Vec3(0.5, 0.5, -0.5), Vec3(0.5, -0.5, -0.5), Vec3(-0.5, -0.5, -0.5), Vec3(-0.5, 0.5, -0.5), Rgba8::YELLOW, AABB2(Vec2(0.5, 0.5), Vec2(-0.5, -0.5)));
-	AddVertsForQuad3D(Cube1->m_vertexes, Vec3(-0.5, 0.5, 0.5), Vec3(-0.5, -0.5, 0.5), Vec3(0.5, -0.5, 0.5), Vec3(0.5, 0.5, 0.5), Rgba8::BLUE, AABB2(Vec2(-0.5, 0.5), Vec2(0.5, -0.5)));
-	Cube1->m_texture = nullptr;
-	Cube1->m_position = Vec3(2,2,0);
-	m_props.push_back(Cube1);
-
-	Prop* Cube2 = new Prop(this);
-	AddVertsForQuad3D(Cube2->m_vertexes, Vec3(0.5, -0.5, -0.5), Vec3(0.5, 0.5, -0.5), Vec3(0.5, 0.5, 0.5), Vec3(0.5, -0.5, 0.5), Rgba8::RED, AABB2(Vec2(0.5, -0.5), Vec2(0.5, 0.5)));
-	AddVertsForQuad3D(Cube2->m_vertexes, Vec3(-0.5, 0.5, -0.5), Vec3(-0.5, -0.5, -0.5), Vec3(-0.5, -0.5, 0.5), Vec3(-0.5, 0.5, 0.5), Rgba8::CYAN, AABB2(Vec2(-0.5, 0.5), Vec2(-0.5, -0.5)));
-	AddVertsForQuad3D(Cube2->m_vertexes, Vec3(-0.5, -0.5, -0.5), Vec3(0.5, -0.5, -0.5), Vec3(0.5, -0.5, 0.5), Vec3(-0.5, -0.5, 0.5), Rgba8::MAGENTA, AABB2(Vec2(-0.5, -0.5), Vec2(0.5, -0.5)));
-	AddVertsForQuad3D(Cube2->m_vertexes, Vec3(0.5, 0.5, -0.5), Vec3(-0.5, 0.5, -0.5), Vec3(-0.5, 0.5, 0.5), Vec3(0.5, 0.5, 0.5), Rgba8::GREEN, AABB2(Vec2(0.5, 0.5), Vec2(-0.5, 0.5)));
-	AddVertsForQuad3D(Cube2->m_vertexes, Vec3(0.5, 0.5, -0.5), Vec3(0.5, -0.5, -0.5), Vec3(-0.5, -0.5, -0.5), Vec3(-0.5, 0.5, -0.5), Rgba8::YELLOW, AABB2(Vec2(0.5, 0.5), Vec2(-0.5, -0.5)));
-	AddVertsForQuad3D(Cube2->m_vertexes, Vec3(-0.5, 0.5, 0.5), Vec3(-0.5, -0.5, 0.5), Vec3(0.5, -0.5, 0.5), Vec3(0.5, 0.5, 0.5), Rgba8::BLUE, AABB2(Vec2(-0.5, 0.5), Vec2(0.5, -0.5)));
-	Cube2->m_texture = nullptr;
-	Cube2->m_position = Vec3(-2,-2,0);
-	m_props.push_back(Cube2);
-
-	Prop* Sphere = new Prop(this);
-	AddVertsForSphere3D(Sphere->m_vertexes, Vec3(0,0,0), 1.f);
-	Sphere->m_texture = g_engine->m_render->CreateOrGetTextureFromFile("Data/Image/TestUV.png");
-	Sphere->m_position = Vec3(10,-5,1);
-	m_props.push_back(Sphere);
-
-	Prop* Cylinder = new Prop(this);
-	AddVertsForCylinder3D(Cylinder->m_vertexes, Vec3(0,0,0), Vec3(3,0,0), 0.7f);
-	Cylinder->m_texture = nullptr;
-	Cylinder->m_position = Vec3(7,5,2);
-	Cylinder->m_orientation.m_pitchDegrees = 90;
-	m_props.push_back(Cylinder);
-
-	Prop* Cone = new Prop(this);
-	AddVertsForCone3D(Cone->m_vertexes, Vec3(0,0,0), Vec3(1,0,0), 0.5f);
-	Cone->m_texture = nullptr;
-	Cone->m_position = Vec3(3,0,3);
-	Cone->m_orientation.m_pitchDegrees = -90;
-	m_props.push_back(Cone);
-
-	Prop* Arrow = new Prop(this);
-	AddVertsForArrow3D(Arrow->m_vertexes, Vec3(0,0,0), Vec3(0,2,0), .2f, Rgba8::MAGENTA);
-	Arrow->m_texture = nullptr;
-	Arrow->m_position = Vec3(2,0,2);
-	m_props.push_back(Arrow);
+	
 
 	DebugAddWorldBasis(Mat44(),-1.f);
-	//DebugAddBasis(Mat44(), -1.f, 1.f, .25f, 2.f, 2.f);
-	//DebugAddWorldText("TEST",Mat44(),2.f,Vec2(0,1),-1 );
-	DebugAddWorldBillboardText("BillboardDebugText", Vec3(0.f,0.f,0.f), 1.f, Vec2(0, 1), -1.f);
+	
 
 
 	/////////////// Grid setup ////////////////
@@ -335,11 +285,6 @@ void Game::CheckInputs()
 void Game::RenderEntities() const
 {
 
-	for (Prop* prop : m_props)
-	{
-		prop->Render();
-	}
-
 	g_engine->m_render->SetModelConstants();
 	g_engine->m_render->BindTexture(nullptr);
 	g_engine->m_render->DrawVertexArray(m_grid);
@@ -370,27 +315,7 @@ void Game::UpdateEntities([[maybe_unused]]float deltaSeconds)
 {
 	m_player->Update(deltaSeconds);
 
-	for (int i = 0; i < m_props.size(); ++i)
-	{
-		m_props[i]->Update(deltaSeconds);
-	}
 	
-	if (m_gameTimer01->HasPeriodElapsed())
-	{
-		m_props[0]->m_orientation.m_rollDegrees += 1.f;			// this is the wrong method?, need to do with matrix's ?
-		m_props[0]->m_orientation.m_pitchDegrees += 1.f;
-		m_props[2]->m_orientation.m_yawDegrees += 1.f;
-		//m_props[3]->m_orientation.m_pitchDegrees += 1.f;
-		//m_props[3]->m_orientation.m_yawDegrees += 1.4f;
-		m_props[4]->m_orientation.m_pitchDegrees -= 2.f;
-		m_props[4]->m_orientation.m_yawDegrees -= 1.6f;
-		m_gameTimer01->Start();
-	}
-	
-	float fractionTowardEnd = sinf((float)m_gameClock->GetTotalSeconds());
-	fractionTowardEnd = RangeMap(fractionTowardEnd, -1.f, 1, 0.f, 1.f);
-	Rgba8 Color = Interpolate(Rgba8::BLACK, Rgba8::WHITE, fractionTowardEnd);
-	m_props[1]->m_color = Rgba8(Color.r, Color.g, Color.b,255);			
 }
 
 void Game::UpdateCameras([[maybe_unused]]float deltaSeconds)
@@ -500,7 +425,7 @@ void Game::RenderAttractMode() const			// #todo add pulsing to start button? shi
 		tempAABB2verts[5].m_uvTexCoords= Vec2(0.f,1.f);
 
 	
-		Texture* testTexture2 = g_engine->m_render->CreateOrGetTextureFromFile("Data/Image/Test_StbiFlippedAndOpenGL.png");
+		Texture* testTexture2 = g_engine->m_render->CreateOrGetTextureFromFile("Data/Images/Test_StbiFlippedAndOpenGL.png");
 
 		//Texture* testTexture = g_engine->m_render->CreateTextureFromData("faketext",IntVec2(4,4),4,fakeImageData);
 		g_engine->m_render->BindTexture(testTexture2);

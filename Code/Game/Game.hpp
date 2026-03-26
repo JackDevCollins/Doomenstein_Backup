@@ -2,11 +2,12 @@
 #include "Game/GameCommon.hpp"
 #include "Engine/Math/MathUtils.hpp"
 #include "Engine/Math/RandomNumberGenerator.hpp"
-#include "Game/Entity.hpp"
 #include "Engine/Audio/AudioSystem.hpp"
 
 class Player;
 class Prop;
+class Clock;
+class Timer;
 
 enum GameState
 {

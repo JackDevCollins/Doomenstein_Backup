@@ -22,10 +22,9 @@ App::App()
 {
 	g_app = this;
 
-	//XmlDocument gameConfigXML;
-	//gameConfigXML.LoadFile("Data/GameConfig.xml");
-
-	//g_globalConfigBlackboard.PopulateFromXmlElementAttributes(*gameConfigXML.FirstChildElement());
+	XmlDocument gameConfigXML;
+	gameConfigXML.LoadFile("Data/GameConfig.xml");
+	g_globalConfigBlackboard.PopulateFromXmlElementAttributes(*gameConfigXML.FirstChildElement());
 
  	XmlDocument engineConfigXML;
  	engineConfigXML.LoadFile("Data/EngineConfig.xml");
@@ -45,7 +44,7 @@ App::App()
 
 	DebugRenderConfig DebugConfigure;
 	DebugRenderSystemStartup(DebugConfigure);
-	g_defaultFont = g_engine->m_render->CreateOrGetBitmapFont("Data/Image/SquirrelFixedFont");
+	g_defaultFont = g_engine->m_render->CreateOrGetBitmapFont("Data/Images/SquirrelFixedFont");
 
 	m_game = new Game(g_app);
 	g_engine->m_eventSystem->SubscribeEventCallbackFunction("Quit", App::Event_Quit);
@@ -65,13 +64,9 @@ App::~App()
 void App::RunFrame()
 {
 	float deltaSeconds = static_cast<float>(g_systemClock->GetDeltaSeconds());
-// 	float timeNow = (float) GetCurrentTimeSeconds();
-// 	float deltaSeconds = static_cast <float> (timeNow - m_lastFrameTime);
-// 	m_lastFrameTime = timeNow;
 
 	AABB2 testSquare = AABB2(Vec2(5,5),Vec2(10,10));
 
-	
 	if (m_isPaused)
 	{
 		deltaSeconds = 0.f;
