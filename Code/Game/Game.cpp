@@ -18,6 +18,8 @@
 #include <string>
 #include <math.h>
 #include <cmath>
+#include <iomanip>
+#include <sstream>
 
 // include order is high-level to low level			app-game-playership-engine-input-renderer-rgba  maybe include your own at the top 
 //-----------------------------------------------------------------------------------------------
@@ -187,11 +189,37 @@ void Game::Render() const
 		Vec3 position = m_player->m_position;
 		EulerAngles orientation = m_player->m_orientation;
 		AABB2 screenBounds = AABB2(m_screenCamera->GetOrthoBottomLeft(), m_screenCamera->GetOrthoTopRight());
-		DebugAddScreenText("Player position: " + std::to_string(position.x) + " , " + std::to_string(position.y) + " , " + 
-				std::to_string(position.z), AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(0, 1), 0);
-		DebugAddScreenText("Camera orientation " + std::to_string(orientation.m_yawDegrees) + " , " + std::to_string(orientation.m_pitchDegrees) + 
-				" , " + std::to_string(orientation.m_rollDegrees), AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 40.f),Vec2(screenBounds.m_maxs.x,screenBounds.m_maxs.y - 20.f)),20.f, Vec2(0,1),0);
-		DebugAddScreenText("Time: " + std::to_string(g_systemClock->GetTotalSeconds()) + " FPS: " + std::to_string(g_systemClock->GetFrameRate()) + " Scale: " + std::to_string(g_systemClock->GetTimeScale()), 
+
+		char buffer[32];
+
+		sprintf_s(buffer, "%.2f", g_systemClock->GetTotalSeconds());
+		std::string displayTime = buffer;
+
+		sprintf_s(buffer, "%.2f", g_systemClock->GetFrameRate());
+		std::string displayFPS = buffer;
+
+		sprintf_s(buffer, "%.2f", g_systemClock->GetTimeScale());
+		std::string displayTimeScale = buffer;
+
+		sprintf_s(buffer, "%.2f", position.x);
+		std::string displayPosx = buffer;
+		sprintf_s(buffer, "%.2f", position.y);
+		std::string displayPosy = buffer;
+		sprintf_s(buffer, "%.2f", position.z);
+		std::string displayPosz = buffer;
+
+		sprintf_s(buffer, "%.2f", orientation.m_yawDegrees);
+		std::string displayYaw = buffer;
+		sprintf_s(buffer, "%.2f", orientation.m_pitchDegrees);
+		std::string displayPitch = buffer;
+		sprintf_s(buffer, "%.2f", orientation.m_rollDegrees);
+		std::string displayRoll = buffer;
+
+		DebugAddScreenText("Player position: " + displayPosx + " , " + displayPosy + " , " + 
+				displayPosz, AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(0, 1), 0);
+		DebugAddScreenText("Camera orientation " + displayYaw + " , " + displayPitch + 
+				" , " + displayRoll, AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 40.f),Vec2(screenBounds.m_maxs.x,screenBounds.m_maxs.y - 20.f)),20.f, Vec2(0,1),0);
+		DebugAddScreenText("Time: " + displayTime + " FPS: " + displayFPS + " Scale: " + displayTimeScale, 
 				AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(1.f,0), 0.f);
 		DebugRenderScreen(*m_screenCamera);
 
