@@ -61,12 +61,11 @@ void Game::Startup()
 	m_player->m_position = Vec3(-2,0,0);
 	m_worldCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation );
 	
+
 	
 
 	DebugAddWorldBasis(Mat44(),-1.f);
 	
-
-
 	/////////////// Grid setup ////////////////
 
 	float size = 50.f;	// half size, 100.f total
@@ -263,10 +262,6 @@ void Game::CheckInputs()
 		}
 		else
 			g_app->m_isSlowMo = true;
-	}
-	if (g_engine->m_input->WasKeyJustPressed('I'))			// I to 
-	{
-		
 	}
 	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_F1))	// f1 for developer-mode
 	{

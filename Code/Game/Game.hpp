@@ -5,19 +5,15 @@
 #include "Engine/Audio/AudioSystem.hpp"
 
 class Player;
-class Prop;
 class Clock;
 class Timer;
 
 enum GameState
 {
-	GAMESTATE_ATTRACT,				// = 0
+	GAMESTATE_ATTRACT,			// = 0
 	GAMESTATE_MENU,
-	GAMESTATE_GAME,				// = 1
-	GAMESTATE_WIN,				// = 2
-	GAMESTATE_LOSE,				// = 3
-
-	NUM, // = 14
+	GAMESTATE_GAME,				// = 1				
+	NUM, 
 };
 
 //-----------------------------------------------------------------------------------------------
