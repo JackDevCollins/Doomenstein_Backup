@@ -40,6 +40,8 @@ Game::Game(App* owner)
 	m_worldCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
 	//m_screenCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
 	
+	// i could createorgetshader here or just whenever i need it for the first time (render something lit)
+
 	Startup();
 	owner->m_game = this;
 }
