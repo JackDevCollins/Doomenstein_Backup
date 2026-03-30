@@ -61,7 +61,6 @@ void Game::Startup()
 	m_player->m_position = Vec3(-2,0,0);
 	m_worldCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation );
 	
-
 	
 
 	DebugAddWorldBasis(Mat44(),-1.f);

@@ -1,8 +1,15 @@
 #pragma once
-
+#include "Game/MapDefinition.hpp"
+#include "Game/TileDefinition.hpp"
+#include "Game/Tile.hpp"
 
 class Game;
-
+class AABB3;
+class AABB2;
+class Vec3;
+class VertexBuffer;
+class IndexBuffer;
+struct Vertex_PCUTBN;
 
 class Map 
 {
@@ -31,7 +38,7 @@ class Map
 	RaycastResult RaycastAll(const Vec3& start, const Vec3& direciton, float distance, Actor* owner = nullptr) const;
 	RaycastResult RaycastWorldXY(const Vec3& start, const Vec3& direction, float distance) const;
 	RaycastResult RaycastWorldZ(const Vec3& start, const Vec3& direction, float distance) const;
-	RaycastResult RaycastWorldActors(const vec3& start, const Vec3& direciton, float distance, Actor* owner = null) const;
+	RaycastResult RaycastWorldActors(const Vec3& start, const Vec3& direciton, float distance, Actor* owner = null) const;
 	
 	Game* m_game = nullptr;
 

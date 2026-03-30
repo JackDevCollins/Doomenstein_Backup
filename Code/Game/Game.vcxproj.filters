@@ -40,6 +40,9 @@
     <ClCompile Include="TileDefinition.cpp">
       <Filter>Code\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Tile.cpp">
+      <Filter>Gameplay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.hpp">
@@ -65,6 +68,9 @@
     </ClInclude>
     <ClInclude Include="TileDefinition.hpp">
       <Filter>Code\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Tile.hpp">
+      <Filter>Gameplay</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

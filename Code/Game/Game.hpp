@@ -55,8 +55,12 @@ public:
 	Camera*				m_worldCamera = nullptr;
 	Camera*				m_screenCamera = nullptr;
 	Player*				m_player = nullptr;
-	std::vector<Prop*>	m_props;
 	std::vector<Vertex> m_grid;
+	
+	//-----------------------------------------------------------------------------------------------
+	Map*				m_currentMap;
+
+
 
 private:
 	
