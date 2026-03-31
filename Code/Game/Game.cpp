@@ -2,6 +2,10 @@
 #include "Game/App.hpp"
 #include "Game/GameCommon.hpp"
 #include "Game/Player.hpp"
+#include "Game/Map.hpp"
+#include "Game/Tile.hpp"
+#include "Game/MapDefinition.hpp"
+#include "Game/TileDefinition.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Renderer/Camera.hpp"
 #include "Engine/Core/Rgba8.hpp"
@@ -54,76 +58,16 @@ void Game::Startup()
 {
 	g_app->m_game = this;
 	Vec2 worldCenter( WORLD_SIZE_X * 0.5f, WORLD_SIZE_Y * 0.5f );
-
 	g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);				// #ToDo what other modes do i need to set?
-
 	m_player = new Player(this);
 	m_player->m_position = Vec3(-2,0,0);
 	m_worldCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation );
-	
-	
 
-	DebugAddWorldBasis(Mat44(),-1.f);
-	
-	/////////////// Grid setup ////////////////
-
-	float size = 50.f;	// half size, 100.f total
-
-	for (int i = -50; i <= 50; ++i)
-	{
-		// x axis (red)
-		{
-			float thickness = 0.02f;
-			Rgba8 color = Rgba8(128, 128, 128);
-
-			if (i == 0)
-			{
-				thickness = 0.1f;
-				color = Rgba8(255, 0, 0); // origin X axis
-			}
-			else if (i % 5 == 0)
-			{
-				thickness = 0.05f;
-				color = Rgba8(200, 0, 0);	// red every 5
-			}
-			else
-			{
-				color = Rgba8(128, 128, 128);
-			}
-
-			AABB3 line(Vec3(-size, i - thickness, -thickness),
-				Vec3(size, i + thickness, thickness));
-
-			AddVertsForAABB3D(m_grid, line, color);
-		}
-	
-		{
-			float thickness = 0.02f;
-			Rgba8 color = Rgba8(128, 128, 128); // grey
-
-			if (i == 0)
-			{
-				thickness = 0.099f;
-				color = Rgba8(0, 255, 0); // origin Y axis
-			}
-			else if (i % 5 == 0)
-			{
-				thickness = 0.049f;
-				color = Rgba8(0, 200, 0); // green every 5
-			}
-			else
-			{
-				color = Rgba8(128, 128, 128);
-			}
-
-			AABB3 line(
-				Vec3(i - thickness, -size, -thickness),
-				Vec3(i + thickness, size, thickness)
-			);
-
-			AddVertsForAABB3D(m_grid, line, color);
-		}
-	}
+	TileDefinition::InitializeDefinitions("Data/Definitions/TileDefinitions.xml");
+	MapDefinition::InitializeDefinitions("Data/Definitions/MapDefinitions.xml");
+	//ActorDefinition::InitializeDefinitions("Data/Definitions/ActorDefiniitions.xml");
+	//ProjectileActorDefinition::InitializeDefinitions("Data/Definitions/ProjectileActorDefinitions.xml");
+	//WeaponDefinition::InitializeDefinitions("Data/Definitions/WeaponDefinitions.xml");
 }
 
 
@@ -354,6 +298,27 @@ void Game::UpdateCameras([[maybe_unused]]float deltaSeconds)
 	m_worldCamera->SetCameraToRenderTransform(m_worldCamera->GetCameraToRenderTransform());
 }
 
+
+void Game::EnterState(GameState state)	// state is what you are entering
+{
+	if (state == GAMESTATE_GAME)
+	{
+		if (m_currentMap == nullptr)
+		{
+			std::string mapToLoad = g_globalConfigBlackboard.GetValue("defaultMap", "defaultMap");
+			m_currentMap = new Map(this, MapDefinition::GetByName(mapToLoad));
+		}
+
+	}
+}
+
+void Game::ExitState(GameState state)	// state is what you are exiting
+{
+	if (state == GAMESTATE_GAME)
+	{
+		m_currentMap->~Map();
+	}
+}
 
 void Game::DeleteGarbageEntities()
 {

@@ -4,15 +4,19 @@
 #include "Game/Tile.hpp"
 
 class Game;
-class AABB3;
-class AABB2;
-class Vec3;
+class Actor;
+struct AABB3;
+struct AABB2;
+struct Vec3;
 class VertexBuffer;
 class IndexBuffer;
 struct Vertex_PCUTBN;
+struct RaycastResult3D;
 
 class Map 
 {
+public:
+
 	Map(Game* game, const MapDefinition* definition);
 	~Map();
 
@@ -35,23 +39,23 @@ class Map
 
 	void Render();
 
-	RaycastResult RaycastAll(const Vec3& start, const Vec3& direciton, float distance, Actor* owner = nullptr) const;
-	RaycastResult RaycastWorldXY(const Vec3& start, const Vec3& direction, float distance) const;
-	RaycastResult RaycastWorldZ(const Vec3& start, const Vec3& direction, float distance) const;
-	RaycastResult RaycastWorldActors(const Vec3& start, const Vec3& direciton, float distance, Actor* owner = null) const;
+	RaycastResult3D RaycastAll(const Vec3& start, const Vec3& direciton, float distance, Actor* owner = nullptr) const;
+	RaycastResult3D RaycastWorldXY(const Vec3& start, const Vec3& direction, float distance) const;
+	RaycastResult3D RaycastWorldZ(const Vec3& start, const Vec3& direction, float distance) const;
+	RaycastResult3D RaycastWorldActors(const Vec3& start, const Vec3& direciton, float distance, Actor* owner = nullptr) const;
 	
 	Game* m_game = nullptr;
 
 protected:
 	
-	const MapDefinition* m_definition = nullptr;
-	std::vector<Tile> m_tiles;
-	IntVec2 m_dimensions;
+	const MapDefinition*		m_definition = nullptr;
+	std::vector<Tile>			m_tiles;
+	IntVec2						m_dimensions;
 
-	std::vector<Vertex_PCUTBN> m_vertexes;
-	std::vector<unsigned int> m_indexes;
-	const Texture* m_texture = nullptr;
-	Shader* m_shader = nullptr;
-	VertexBuffer* m_vertexBuffer = nullptr;
-	IndexBuffer* m_indexBuffer = nullptr;
+	std::vector<Vertex_PCUTBN>	m_vertexes;
+	std::vector<unsigned int>	m_indexes;
+	const Texture*				m_texture = nullptr;
+	Shader*						m_shader = nullptr;
+	VertexBuffer*				m_vertexBuffer = nullptr;
+	IndexBuffer*				m_indexBuffer = nullptr;
 };

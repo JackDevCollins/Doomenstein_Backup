@@ -5,6 +5,7 @@
 #include "Engine/Audio/AudioSystem.hpp"
 
 class Player;
+class Map;
 class Clock;
 class Timer;
 
@@ -41,7 +42,8 @@ public:
 	void UpdateEntities( float deltaSeconds );
 	void UpdateCameras( float deltaSeconds);
 
-
+	void EnterState(GameState state);
+	void ExitState(GameState state);
 
 public:
 	GameState			m_currentGameState = GAMESTATE_ATTRACT;

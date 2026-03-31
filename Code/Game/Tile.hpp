@@ -3,6 +3,9 @@
 
 class Tile
 {
-	
+public:
+
+	Tile(AABB3 bounds);
+
 	AABB3	m_bounds;
 };
