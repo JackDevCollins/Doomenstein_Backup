@@ -54,7 +54,8 @@ protected:
 
 	std::vector<Vertex_PCUTBN>	m_vertexes;
 	std::vector<unsigned int>	m_indexes;
-	const Texture*				m_texture = nullptr;
+	Texture*					m_texture = nullptr;
+	SpriteSheet*				m_terrain = nullptr;
 	Shader*						m_shader = nullptr;
 	VertexBuffer*				m_vertexBuffer = nullptr;
 	IndexBuffer*				m_indexBuffer = nullptr;

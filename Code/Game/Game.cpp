@@ -77,8 +77,10 @@ void Game::Update(float deltaSeconds)
 	if (m_currentGameState != m_nextGameState)
 	{
 		// change the game state variable
+		ExitState(m_currentGameState);
 		m_currentGameState = m_nextGameState;
 		m_timeStartedCurrentState = static_cast<float>(GetCurrentTimeSeconds());
+		EnterState(m_currentGameState);
 	}
 
 	if (m_currentGameState == GAMESTATE_ATTRACT || m_currentGameState == GAMESTATE_MENU)
@@ -116,6 +118,8 @@ void Game::Render() const
 	if (m_currentGameState == GameState::GAMESTATE_GAME)
 	{
 		g_engine->m_render->BeginCamera(*m_worldCamera);
+
+		m_currentMap->Render();
 
 		RenderEntities();
 
