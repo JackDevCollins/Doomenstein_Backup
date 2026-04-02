@@ -46,7 +46,6 @@ public:
 	
 	Game* m_game = nullptr;
 
-protected:
 	
 	const MapDefinition*		m_definition = nullptr;
 	std::vector<Tile>			m_tiles;
@@ -59,4 +58,8 @@ protected:
 	Shader*						m_shader = nullptr;
 	VertexBuffer*				m_vertexBuffer = nullptr;
 	IndexBuffer*				m_indexBuffer = nullptr;
+
+	Vec3						m_sunDirection = Vec3(2,1,-1);
+	float						m_sunIntensity = 0.85f;
+	float						m_ambientIntensity = 0.35f;
 };

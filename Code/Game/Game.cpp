@@ -44,6 +44,7 @@ Game::Game(App* owner)
 	m_worldCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
 	//m_screenCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
 	
+	
 	// i could createorgetshader here or just whenever i need it for the first time (render something lit)
 
 	Startup();
@@ -62,6 +63,8 @@ void Game::Startup()
 	m_player = new Player(this);
 	m_player->m_position = Vec3(-2,0,0);
 	m_worldCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation );
+
+
 
 	TileDefinition::InitializeDefinitions("Data/Definitions/TileDefinitions.xml");
 	MapDefinition::InitializeDefinitions("Data/Definitions/MapDefinitions.xml");
@@ -120,6 +123,8 @@ void Game::Render() const
 		g_engine->m_render->BeginCamera(*m_worldCamera);
 
 		m_currentMap->Render();
+
+		g_engine->m_render->BindShader(nullptr);
 
 		RenderEntities();
 
@@ -196,28 +201,101 @@ void Game::CheckInputs()
 		g_engine->m_devConsole->ToggleOpen();
 	}
 
-	if (g_engine->m_input->IsKeyDown('O'))							// o to step
+
+	///////// Lighting Controls /////////
+
+	char buffer[32];
+
+	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_F2))
 	{
-		g_app->m_pauseAfterNextUpdate = true;
-		g_app->m_isPaused = false;
+		m_currentMap->m_sunDirection.x -= 1;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.x);
+		std::string sunDirectionX = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.y);
+		std::string sunDirectionY = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.z);
+		std::string sunDirectionZ = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunIntensity);
+		
+		DebugAddMessage("Sun Direction Decreased to: " + sunDirectionX + ", " + sunDirectionY + ", " + sunDirectionZ, 2.f);
 	}
-	if (g_engine->m_input->WasKeyJustPressed('T'))					// t to slow mo
+
+	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_F3))
 	{
-		if (g_app->m_isSlowMo == true)
-		{
-			g_app->m_isSlowMo = false;
-		}
-		else
-			g_app->m_isSlowMo = true;
+		m_currentMap->m_sunDirection.x += 1;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.x);
+		std::string sunDirectionX = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.y);
+		std::string sunDirectionY = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.z);
+		std::string sunDirectionZ = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunIntensity);
+
+		DebugAddMessage("Sun Direction Increased to: " + sunDirectionX + ", " + sunDirectionY + ", " + sunDirectionZ, 2.f);
 	}
-	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_F1))	// f1 for developer-mode
+
+	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_F4))
 	{
-		g_debugDraw = true;
+		m_currentMap->m_sunDirection.y -= 1;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.x);
+		std::string sunDirectionX = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.y);
+		std::string sunDirectionY = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.z);
+		std::string sunDirectionZ = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunIntensity);
+
+		DebugAddMessage("Sun Direction Decreased to: " + sunDirectionX + ", " + sunDirectionY + ", " + sunDirectionZ, 2.f);
 	}
-	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_F8))	// f8 to reset the game
+
+	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_F5))
 	{
-		delete g_app->m_game;
-		g_app->m_game = new Game(g_app);
+		m_currentMap->m_sunDirection.y += 1;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.x);
+		std::string sunDirectionX = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.y);
+		std::string sunDirectionY = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunDirection.z);
+		std::string sunDirectionZ = buffer;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunIntensity);
+
+		DebugAddMessage("Sun Direction Increased to: " + sunDirectionX + ", " + sunDirectionY + ", " + sunDirectionZ, 2.f);
+	}
+
+	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_F6))
+	{
+		m_currentMap->m_sunIntensity -= 0.05f;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunIntensity);
+		std::string sunIntensity = buffer;
+
+		DebugAddMessage("Sun Intensity Decreased to: " + sunIntensity, 2.f);
+	}
+
+	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_F7))
+	{
+		m_currentMap->m_sunIntensity += 0.05f;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_sunIntensity);
+		std::string sunIntensity = buffer;
+
+		DebugAddMessage("Sun Intensity Increased to: " + sunIntensity, 2.f);
+	}
+
+	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_F8))
+	{
+		m_currentMap->m_sunIntensity -= 0.05f;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_ambientIntensity);
+		std::string ambientIntensity = buffer;
+
+		DebugAddMessage("Ambient Intensity Decreased to: " + ambientIntensity, 2.f);
+	}
+
+	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_F9))
+	{
+		m_currentMap->m_ambientIntensity += 0.05f;
+		sprintf_s(buffer, "%.2f", m_currentMap->m_ambientIntensity);
+		std::string ambientIntensity = buffer;
+
+		DebugAddMessage("Ambient Intensity Increased to: " + ambientIntensity, 2.f);
 	}
 
 	///////// debug render controls ///////
