@@ -4,7 +4,7 @@
 #include "Engine/Core/Rgba8.hpp"
 
 class Game;
-
+class Actor;
 
 class Player 
 {
@@ -29,4 +29,7 @@ public:
 	float		m_moveSpeed = 1.f;
 	float		m_rotationSpeed = 1.f;
 	float		m_mouseLookSens = 50.f;
+
+	Actor*		m_testProjectile = nullptr;
+	bool		m_controlProjectile = false;
 };

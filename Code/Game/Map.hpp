@@ -35,7 +35,9 @@ public:
 	void CollideActors();
 	void CollideActors(Actor* actorA, Actor* actorB);
 	void CollideActorsWithMap();
-	void CollideActorWithMAp(Actor* actor);
+	void CollideActorWithMap(Actor* actor);
+
+	void CreateTestActors();
 
 	void Render();
 
@@ -50,7 +52,6 @@ public:
 	const MapDefinition*		m_definition = nullptr;
 	std::vector<Tile>			m_tiles;
 	IntVec2						m_dimensions;
-
 	std::vector<Vertex_PCUTBN>	m_vertexes;
 	std::vector<unsigned int>	m_indexes;
 	Texture*					m_texture = nullptr;
@@ -58,6 +59,8 @@ public:
 	Shader*						m_shader = nullptr;
 	VertexBuffer*				m_vertexBuffer = nullptr;
 	IndexBuffer*				m_indexBuffer = nullptr;
+
+	std::vector<Actor*>			m_actors;
 
 	Vec3						m_sunDirection = Vec3(2,1,-1);
 	float						m_sunIntensity = 0.85f;

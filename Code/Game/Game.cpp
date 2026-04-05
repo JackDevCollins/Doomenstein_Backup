@@ -60,9 +60,7 @@ void Game::Startup()
 	g_app->m_game = this;
 	Vec2 worldCenter( WORLD_SIZE_X * 0.5f, WORLD_SIZE_Y * 0.5f );
 	g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);				// #ToDo what other modes do i need to set?
-	m_player = new Player(this);
-	m_player->m_position = Vec3(-2,0,0);
-	m_worldCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation );
+	
 
 
 
@@ -91,7 +89,6 @@ void Game::Update(float deltaSeconds)
 		UpdateAttractMode( deltaSeconds );
 	}
 
-	
 	
 	CheckInputs();
 
@@ -139,8 +136,14 @@ void Game::Render() const
 	g_engine->m_render->BeginCamera(*m_screenCamera);
 
 		g_engine->m_devConsole->Render(AABB2(Vec2(m_screenCamera->GetOrthoBottomLeft()), Vec2(m_screenCamera->GetOrthoTopRight())));
-		Vec3 position = m_player->m_position;
-		EulerAngles orientation = m_player->m_orientation;
+		Vec3 position;
+		EulerAngles orientation;
+		if (m_player)
+		{
+			position = m_player->m_position;
+			orientation = m_player->m_orientation;
+		}
+		
 		AABB2 screenBounds = AABB2(m_screenCamera->GetOrthoBottomLeft(), m_screenCamera->GetOrthoTopRight());
 
 		char buffer[32];
@@ -363,7 +366,11 @@ void Game::RenderText() const
 
 void Game::UpdateEntities([[maybe_unused]]float deltaSeconds)
 {
-	m_player->Update(deltaSeconds);
+	if (m_player)
+	{
+		m_player->Update(deltaSeconds);
+	}
+	
 
 	
 }
@@ -376,8 +383,12 @@ void Game::UpdateCameras([[maybe_unused]]float deltaSeconds)
 	float tempAspect = g_engine->m_window->m_config.m_clientAspect;										// #ToDo my client aspect from config (16/10) does not give the desired results. 2 does
 	m_worldCamera->SetPerspectiveView(tempAspect, 60.f, 0.1f, 100.0f);
 	
-	m_worldCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation );
-	m_worldCamera->SetCameraToRenderTransform(m_worldCamera->GetCameraToRenderTransform());
+	if (m_player)
+	{
+		m_worldCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation);
+		m_worldCamera->SetCameraToRenderTransform(m_worldCamera->GetCameraToRenderTransform());
+	}
+	
 }
 
 
@@ -391,6 +402,13 @@ void Game::EnterState(GameState state)	// state is what you are entering
 			m_currentMap = new Map(this, MapDefinition::GetByName(mapToLoad));
 		}
 
+		if (m_player == nullptr)
+		{
+			m_player = new Player(this);
+			m_player->m_position = Vec3(2.5f,8.5f,0.5f);
+			m_worldCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation);
+		}
+
 	}
 }
 
@@ -399,6 +417,9 @@ void Game::ExitState(GameState state)	// state is what you are exiting
 	if (state == GAMESTATE_GAME)
 	{
 		m_currentMap->~Map();
+		m_currentMap = nullptr;
+		m_player->~Player();
+		m_player = nullptr;
 	}
 }
 
