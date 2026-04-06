@@ -13,6 +13,8 @@ public:
 
 	void  Update(float deltaSeconds);
 	void  Render() const;
+	void  AddVertsForMe();
+	void TestPojectileInput(Vec3 movement);
 
 	virtual Mat44 GetModelToWorldTransform() const;
 

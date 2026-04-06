@@ -1,8 +1,10 @@
 #include "Game/Player.hpp"
 #include "Game/Game.hpp"
 #include "Game/Actor.hpp"
+#include "Game/Map.hpp"
 #include "Engine/Core/Engine.hpp"
 #include "Engine/Input/InputSystem.hpp"
+#include "Engine/Renderer/DebugRender.hpp"
 
 Player::Player(Game* owner)
 	:m_game(owner)
@@ -121,22 +123,36 @@ bool Player::UpdateFromInput(float deltaSeconds)
 		}
 		if (g_engine->m_input->WasKeyJustPressed(KEYCODE_LEFT_MOUSE))	// Initiate raycast of 10 units
 		{
-
+			RaycastResult3D result = m_game->m_currentMap->RaycastAll(m_position,m_orientation.GetForwardDir_IFwd_JLeft_KUp(), 10.f);
+			DebugAddWorldCylinder(result.m_rayStartPosition,(result.m_rayStartPosition + (result.m_rayDirection * result.m_rayLength)), 0.01f, 10.f, Rgba8::WHITE,Rgba8::WHITE, DebugRenderMode::X_RAY);
+			if (result.m_didImpact)
+			{
+				DebugAddWorldSphere(result.m_impactPosition, 0.06f, 10.f);	// white sphere at impact pos
+				DebugAddWorldArrow(result.m_impactPosition, result.m_impactPosition + (result.m_impactNormal.GetNormalized() * 0.3f), 0.03f, 10.f, Rgba8::BLUE, Rgba8::BLUE);
+			}
 		}
 		if (g_engine->m_input->WasKeyJustPressed(KEYCODE_RIGHT_MOUSE))	// Initiate raycast of 0.25 units
 		{
-
+			//RaycastResult3D result = m_game->m_currentMap->RaycastAll(m_position, m_orientation.GetForwardDir_IFwd_JLeft_KUp(), 0.25f);
+			//DebugAddWorldCylinder(result.m_rayStartPosition, (result.m_rayStartPosition + (result.m_rayDirection * result.m_rayLength)), 0.01f, 10.f, Rgba8::WHITE, Rgba8::WHITE, DebugRenderMode::X_RAY);
+			//if (result.m_didImpact)
+			//{
+			//	DebugAddWorldSphere(result.m_impactPosition, 0.06f, 10.f);	// white sphere at impact pos
+			//	DebugAddWorldArrow(result.m_impactPosition, result.m_impactPosition + (result.m_impactNormal.GetNormalized() * 0.3f), 0.03f, 10.f, Rgba8::BLUE, Rgba8::BLUE);
+			//}
 		}
-
 	}
 	else if (m_controlProjectile)
 	{
+		
+
 		while (g_engine->m_input->IsKeyDown('A'))		// translate positive J												// why does changing the pitch of the camera change the k value when moving left and right???
 		{
 			Vec3 forward = m_orientation.GetForwardDir_IFwd_JLeft_KUp();
 			forward.z = 0.f;
 			forward.GetNormalized();
-			m_position += forward.GetRotatedAboutZDegrees(90).GetNormalized() * m_moveSpeed * deltaSeconds;
+			//m_testProjectile->TestPojectileInput(forward.GetRotatedAboutZDegrees(90).GetNormalized() * m_moveSpeed * deltaSeconds);
+			m_testProjectile->m_position += forward.GetRotatedAboutZDegrees(90).GetNormalized() * m_moveSpeed * deltaSeconds;
 			//m_position += m_orientation.GetForwardDir_IFwd_JLeft_KUp().GetRotatedAboutZDegrees(90).GetNormalized() * m_moveSpeed * deltaSeconds;
 			break;
 		}
@@ -146,7 +162,7 @@ bool Player::UpdateFromInput(float deltaSeconds)
 			Vec3 forward = m_orientation.GetForwardDir_IFwd_JLeft_KUp();
 			forward.z = 0.f;
 			forward.GetNormalized();
-			m_position -= forward.GetRotatedAboutZDegrees(90).GetNormalized() * m_moveSpeed * deltaSeconds;
+			m_testProjectile->m_position -= forward.GetRotatedAboutZDegrees(90).GetNormalized() * m_moveSpeed * deltaSeconds;
 			//m_position -= m_orientation.GetForwardDir_IFwd_JLeft_KUp().GetRotatedAboutZDegrees(90).GetNormalized() * m_moveSpeed * deltaSeconds;
 			break;
 		}
@@ -160,6 +176,18 @@ bool Player::UpdateFromInput(float deltaSeconds)
 		while (g_engine->m_input->IsKeyDown('S'))		// translate negative I
 		{
 			m_testProjectile->m_position -= m_orientation.GetForwardDir_IFwd_JLeft_KUp() * m_moveSpeed * deltaSeconds;
+			break;
+		}
+
+		while (g_engine->m_input->IsKeyDown('Z'))		// translate positive K
+		{
+			m_testProjectile->m_position.z += 1 * m_moveSpeed * deltaSeconds;
+			break;
+		}
+
+		while (g_engine->m_input->IsKeyDown('C'))		// translate negative K
+		{
+			m_testProjectile->m_position.z -= 1 * m_moveSpeed * deltaSeconds;
 			break;
 		}
 	}

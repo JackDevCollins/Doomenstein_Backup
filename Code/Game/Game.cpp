@@ -60,9 +60,6 @@ void Game::Startup()
 	g_app->m_game = this;
 	Vec2 worldCenter( WORLD_SIZE_X * 0.5f, WORLD_SIZE_Y * 0.5f );
 	g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);				// #ToDo what other modes do i need to set?
-	
-
-
 
 	TileDefinition::InitializeDefinitions("Data/Definitions/TileDefinitions.xml");
 	MapDefinition::InitializeDefinitions("Data/Definitions/MapDefinitions.xml");
@@ -88,7 +85,11 @@ void Game::Update(float deltaSeconds)
 	{
 		UpdateAttractMode( deltaSeconds );
 	}
-
+	if (m_currentMap)
+	{
+		m_currentMap->Update(static_cast<float>(m_gameClock->GetDeltaSeconds()));
+	}
+	
 	
 	CheckInputs();
 
@@ -138,10 +139,13 @@ void Game::Render() const
 		g_engine->m_devConsole->Render(AABB2(Vec2(m_screenCamera->GetOrthoBottomLeft()), Vec2(m_screenCamera->GetOrthoTopRight())));
 		Vec3 position;
 		EulerAngles orientation;
+		bool controlMode = false;
+		std::string controlModeString = "empty";
 		if (m_player)
 		{
-			position = m_player->m_position;
-			orientation = m_player->m_orientation;
+// 			position = m_player->m_position;
+// 			orientation = m_player->m_orientation;
+			controlMode = m_player->m_controlProjectile;
 		}
 		
 		AABB2 screenBounds = AABB2(m_screenCamera->GetOrthoBottomLeft(), m_screenCamera->GetOrthoTopRight());
@@ -157,24 +161,34 @@ void Game::Render() const
 		sprintf_s(buffer, "%.2f", g_systemClock->GetTimeScale());
 		std::string displayTimeScale = buffer;
 
-		sprintf_s(buffer, "%.2f", position.x);
-		std::string displayPosx = buffer;
-		sprintf_s(buffer, "%.2f", position.y);
-		std::string displayPosy = buffer;
-		sprintf_s(buffer, "%.2f", position.z);
-		std::string displayPosz = buffer;
+		if (controlMode)
+		{
+			controlModeString = "[F1] Control Mode: Projectile";
+		}
+		else
+		{
+			controlModeString = "[F1] Control Mode: Camera";
+		}
 
-		sprintf_s(buffer, "%.2f", orientation.m_yawDegrees);
-		std::string displayYaw = buffer;
-		sprintf_s(buffer, "%.2f", orientation.m_pitchDegrees);
-		std::string displayPitch = buffer;
-		sprintf_s(buffer, "%.2f", orientation.m_rollDegrees);
-		std::string displayRoll = buffer;
+// 		sprintf_s(buffer, "%.2f", position.x);
+// 		std::string displayPosx = buffer;
+// 		sprintf_s(buffer, "%.2f", position.y);
+// 		std::string displayPosy = buffer;
+// 		sprintf_s(buffer, "%.2f", position.z);
+// 		std::string displayPosz = buffer;
+// 
+// 		sprintf_s(buffer, "%.2f", orientation.m_yawDegrees);
+// 		std::string displayYaw = buffer;
+// 		sprintf_s(buffer, "%.2f", orientation.m_pitchDegrees);
+// 		std::string displayPitch = buffer;
+// 		sprintf_s(buffer, "%.2f", orientation.m_rollDegrees);
+// 		std::string displayRoll = buffer;
 
-		DebugAddScreenText("Player position: " + displayPosx + " , " + displayPosy + " , " + 
-				displayPosz, AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(0, 1), 0);
-		DebugAddScreenText("Camera orientation " + displayYaw + " , " + displayPitch + 
-				" , " + displayRoll, AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 40.f),Vec2(screenBounds.m_maxs.x,screenBounds.m_maxs.y - 20.f)),20.f, Vec2(0,1),0);
+// 		DebugAddScreenText("Player position: " + displayPosx + " , " + displayPosy + " , " + 
+// 				displayPosz, AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(0, 1), 0);
+// 		DebugAddScreenText("Camera orientation " + displayYaw + " , " + displayPitch + 
+// 				" , " + displayRoll, AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 40.f),Vec2(screenBounds.m_maxs.x,screenBounds.m_maxs.y - 20.f)),20.f, Vec2(0,1),0);
+		DebugAddScreenText(controlModeString, AABB2(Vec2(screenBounds.m_mins.x + 300.f ,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(0.f,1.f), 0.f);
 		DebugAddScreenText("Time: " + displayTime + " FPS: " + displayFPS + " Scale: " + displayTimeScale, 
 				AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(1.f,0), 0.f);
 		DebugRenderScreen(*m_screenCamera);
@@ -370,9 +384,6 @@ void Game::UpdateEntities([[maybe_unused]]float deltaSeconds)
 	{
 		m_player->Update(deltaSeconds);
 	}
-	
-
-	
 }
 
 void Game::UpdateCameras([[maybe_unused]]float deltaSeconds)

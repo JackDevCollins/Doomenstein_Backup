@@ -33,7 +33,10 @@ Map::Map(Game* game, const MapDefinition* definition)
 Map::~Map()	// #ToDo need to figure out what to release / delete
 {
 	m_vertexes.clear();
-	
+	m_vertexBuffer->~VertexBuffer();
+	m_vertexBuffer = nullptr;
+	m_indexBuffer->~IndexBuffer();
+	m_indexBuffer = nullptr;
 }
 
 void Map::CreateTiles()
@@ -156,7 +159,7 @@ const Tile* Map::GetTile(int x, int y) const
 	return &m_tiles[index];
 }
 
-void Map::Update()
+void Map::Update(float deltaSeconds)
 {
 	m_sunIntensity = GetClampedZeroToOne(m_sunIntensity);
 	m_ambientIntensity = GetClampedZeroToOne(m_ambientIntensity);
@@ -164,6 +167,11 @@ void Map::Update()
 
 	CollideActors();
 	CollideActorsWithMap();
+
+	for (int index = 0; index < m_actors.size(); ++index)
+	{
+		m_actors[index]->Update(deltaSeconds);
+	}
 }
 
 void Map::CollideActors()
@@ -179,31 +187,133 @@ void Map::CollideActors()
 
 void Map::CollideActors(Actor* actorA, Actor* actorB)
 {
-	if (DoDiscsOverlap(Vec2(actorA->m_position.x, actorA->m_position.y), actorA->m_physicsRadius,
-		Vec2(actorB->m_position.x, actorB->m_position.y), actorB->m_physicsRadius))
-	{
-		PushDiscOutOfEachOther3D(actorA->m_position, actorA->m_physicsRadius,
-			actorB->m_position, actorB->m_physicsRadius);
+	Vec2 actorAXYPosition = Vec2(actorA->m_position.x, actorA->m_position.y);
+	Vec2 actorBXYPosition =  Vec2(actorB->m_position.x, actorB->m_position.y);
 
+	if (DoDiscsOverlap(actorAXYPosition, actorA->m_physicsRadius,
+		actorBXYPosition, actorB->m_physicsRadius))
+	{
+		float aTop = actorA->m_position.z + actorA->m_physicsHeight;
+		float aBottom = actorA->m_position.z;
+		float bTop = actorB->m_position.z + actorB->m_physicsHeight;
+		float bBottom = actorB->m_position.z;
+
+		if (aBottom < bTop && aTop > bBottom) // vertical overlap
+		{
+			float horizontalOverlap = (actorA->m_physicsRadius + actorB->m_physicsRadius) - GetDistance2D(actorAXYPosition,actorBXYPosition);
+			float overlapTop = aTop - bBottom;
+			float overlapBottom = bTop - aBottom;
+			float zOverlapAmount = (overlapTop < overlapBottom) ? overlapTop : overlapBottom;
+
+			if (horizontalOverlap <= zOverlapAmount)
+			{
+				PushDiscOutOfEachOther2D(actorAXYPosition, actorA->m_physicsRadius, actorBXYPosition, actorB->m_physicsRadius);
+				actorA->m_position = Vec3(actorAXYPosition.x,actorAXYPosition.y, actorA->m_position.z);
+				actorB->m_position = Vec3(actorBXYPosition.x,actorBXYPosition.y, actorB->m_position.z);
+			}
+			else
+			{
+				float pushAmount = zOverlapAmount * 0.5f;
+				if (aBottom < bBottom) // a below b
+				{
+					actorA->m_position.z -= pushAmount;
+					actorB->m_position.z += pushAmount;
+				}
+				else  // b below a
+				{
+					actorA->m_position.z += pushAmount;
+					actorB->m_position.z -= pushAmount;
+				}
+			}
+		
+// 			PushDiscOutOfEachOther3D(actorA->m_position, actorA->m_physicsRadius,
+// 				actorB->m_position, actorB->m_physicsRadius);
+		}
 	}
 }
 
 void Map::CollideActorsWithMap()
 {
-
+	for (size_t i = 0; i < m_actors.size(); ++i)
+	{
+		CollideActorWithMap(m_actors[i]);	
+	}
 }
 
 void Map::CollideActorWithMap(Actor* actor)
 {
+	IntVec2 tileCoordsActorOccupies			= IntVec2(RoundDownToInt(actor->m_position.x),RoundDownToInt(actor->m_position.y));
+	const Tile*	tileObjectActorOccupies		= GetTile(tileCoordsActorOccupies.x,tileCoordsActorOccupies.y);
+	IntVec2 positionNorth	  = tileCoordsActorOccupies + IntVec2(0, 1);
+	IntVec2 positionEast	  = tileCoordsActorOccupies + IntVec2(1, 0);
+	IntVec2 positionSouth	  = tileCoordsActorOccupies + IntVec2(0, -1);
+	IntVec2 positionWest	  = tileCoordsActorOccupies + IntVec2(-1, 0);
+	IntVec2 positionNorthEast = tileCoordsActorOccupies + IntVec2(1, 1);
+	IntVec2 positionSouthEast = tileCoordsActorOccupies + IntVec2(1, -1);
+	IntVec2 positionSouthWest = tileCoordsActorOccupies + IntVec2(-1, 1);
+	IntVec2 positionNorthWest = tileCoordsActorOccupies + IntVec2(-1, -1);
+	std::vector<const Tile*> testTiles;
+	testTiles.push_back(GetTile(positionNorth.x,positionNorth.y));			// North = index 0
+	testTiles.push_back(GetTile(positionEast.x,positionEast.y));			// East = index 1
+	testTiles.push_back(GetTile(positionSouth.x,positionSouth.y));			// South = index 2
+	testTiles.push_back(GetTile(positionWest.x,positionWest.y));			// West = index 3
+	testTiles.push_back(GetTile(positionNorthEast.x, positionNorthEast.y));	// NorthEast = index 4
+	testTiles.push_back(GetTile(positionSouthEast.x, positionSouthEast.y));	// SouthEast = index 5
+	testTiles.push_back(GetTile(positionSouthWest.x, positionSouthWest.y));	// SouthWest = index 6
+	testTiles.push_back(GetTile(positionNorthWest.x, positionNorthWest.y));	// NorthWest = index 7
+
+	for (int testNum = 0; testNum < testTiles.size(); ++testNum)
+	{
+		AABB2 XYTileBounds = AABB2(Vec2(testTiles[testNum]->m_bounds.m_mins.x, testTiles[testNum]->m_bounds.m_mins.y),Vec2(testTiles[testNum]->m_bounds.m_maxs.x, testTiles[testNum]->m_bounds.m_maxs.y));
+		Vec2 XYPosition = Vec2(actor->m_position.x,actor->m_position.y);
+
+		if (!AreCoordsInBounds(testTiles[testNum]->m_bounds.m_mins.x, testTiles[testNum]->m_bounds.m_mins.y))
+		{
+			if (IsPointInsideDisc2D(XYTileBounds.GetNearestPoint(XYPosition), XYPosition, actor->m_physicsRadius));
+			{
+				PushDiscOutOfFixedAABB2D(XYPosition, actor->m_physicsRadius, XYTileBounds);
+				actor->m_position = Vec3(XYPosition.x, XYPosition.y, actor->m_position.z);
+			}
+		}
+		if (testTiles[testNum]->m_tileDefinition->m_isSolid)
+		{
+			if (IsPointInsideDisc2D(XYTileBounds.GetNearestPoint(XYPosition),XYPosition, actor->m_physicsRadius));
+			{
+				PushDiscOutOfFixedAABB2D(XYPosition, actor->m_physicsRadius, XYTileBounds);
+				actor->m_position = Vec3(XYPosition.x,XYPosition.y,actor->m_position.z);
+			}
+// 			if (IsPointInsideZCylinder3D(testTiles[testNum]->m_bounds.GetNearestPoint(actor->m_position), actor->m_position, actor->m_physicsHeight, actor->m_physicsRadius))
+// 			{
+// 				PushCylinderZOutOfFixedAABB3D(actor->m_position, actor->m_physicsRadius, testTiles[testNum]->m_bounds);
+// 			}
+			
+		}
+	}
+	testTiles.clear();
+
+
+	// z check 
+	if (actor->m_position.z < 0.f)
+	{
+		actor->m_position.z = 0.f;
+	}
+	if (actor->m_position.z + actor->m_physicsHeight > 1.f)
+	{
+		actor->m_position.z = 1.f - actor->m_physicsHeight;
+	}
 
 }
 
 void Map::CreateTestActors()
 {
 	Actor* TestEnemy01 = new Actor(m_game, 0.75f, 0.35f, Vec3(7.5f,8.5f,0.25f), Rgba8::RED, true);
+	TestEnemy01->AddVertsForMe();
 	Actor* TestEnemy02 = new Actor(m_game, 0.75f, 0.35f, Vec3(8.5f,8.5f,0.125f), Rgba8::RED, true);
+	TestEnemy02->AddVertsForMe();
 	Actor* TestEnemy03 = new Actor(m_game, 0.75f, 0.35f, Vec3(9.5f,8.5f,0.0f), Rgba8::RED, true);
+	TestEnemy03->AddVertsForMe();
 	Actor* TestProjectile01 = new Actor(m_game, 0.125f, 0.0625f, Vec3(5.5f,8.5f,0.0f), Rgba8::BLUE, false);
+	TestProjectile01->AddVertsForMe();
 	m_actors.push_back(TestEnemy01);
 	m_actors.push_back(TestEnemy02);
 	m_actors.push_back(TestEnemy03);
@@ -235,11 +345,31 @@ void Map::Render()
 	}
 }
 
-RaycastResult3D Map::RaycastAll(const Vec3& start, const Vec3& direciton, float distance, Actor* owner /*= nullptr*/) const
+RaycastResult3D Map::RaycastAll(const Vec3& start, const Vec3& direction, float distance, Actor* owner /*= nullptr*/) const
 {
-	RaycastResult3D result;
+	float lowestDistance = 100000000.f;
+	int lowestIndex = -1;
 
-	return result;
+	RaycastResult3D XYResult	= RaycastWorldXY(start, direction, distance);
+	RaycastResult3D ZResult		= RaycastWorldZ(start, direction, distance);
+	RaycastResult3D ActorResult = RaycastWorldActors(start, direction, distance);
+	std::vector<RaycastResult3D> results;
+	results.push_back(XYResult);
+	results.push_back(ZResult);
+	results.push_back(ActorResult);
+	
+	for (int index = 0; index < results.size(); ++index)
+	{
+		if (results[index].m_didImpact)
+		{
+				if (results[index].m_impactDistance < lowestDistance)
+				{
+					lowestIndex = index;
+					lowestDistance = results[index].m_impactDistance;
+				}
+		}
+	}
+	return results[lowestIndex];
 }
 
 RaycastResult3D Map::RaycastWorldXY(const Vec3& start, const Vec3& direction, float distance) const
@@ -259,11 +389,16 @@ RaycastResult3D Map::RaycastWorldXY(const Vec3& start, const Vec3& direction, fl
 		result.m_didImpact = true;
 		result.m_impactDistance = 0.f;
 		result.m_impactPosition = start;
-		result.m_impactNormal = - direction;
+		result.m_impactNormal = - result.m_rayDirection;
 		return result;
 	}
-
-	float fwdDistPerXCrossing = 1.0f / abs(result.m_rayDirection.x);
+	float fwdDistPerXCrossing;
+	if (result.m_rayDirection.x == 0.f)
+	{
+		fwdDistPerXCrossing = 1.f;
+	}
+	else
+	fwdDistPerXCrossing = 1.0f / abs(result.m_rayDirection.x);
 	int tileStepDirectionX;
 	if (result.m_rayDirection.x < 0)
 	{
@@ -287,16 +422,22 @@ RaycastResult3D Map::RaycastWorldXY(const Vec3& start, const Vec3& direction, fl
 	{
 		tileStepDirectionY = +1;
 	}
-
+	float fwdDistPerYCrossing;
+	if (result.m_rayDirection.y == 0.f)
+	{
+		fwdDistPerYCrossing = 1.f;
+	}
+	else
+	fwdDistPerYCrossing = 1.0f / abs(result.m_rayDirection.y);
 	float yAtFirstYCrossing = (float)tileY + ((float)tileStepDirectionY + 1.f) / 2.f;
 	float yDistToFirstYCrossing = yAtFirstYCrossing - start.y;
-	float fwdDistAtNextYCrossing = fabsf(yDistToFirstYCrossing) * fwdDistPerXCrossing;
+	float fwdDistAtNextYCrossing = fabsf(yDistToFirstYCrossing) * fwdDistPerYCrossing;
 
 	while (result.m_didImpact == false)
 	{
 		if (fwdDistAtNextXCrossing < fwdDistAtNextYCrossing)	// x crosses first
 		{
-			if (fwdDistAtNextXCrossing < distance)	// missed next crossing is past ray length
+			if (fwdDistAtNextXCrossing > distance)	// missed next crossing is past ray length
 			{
 				result.m_didImpact = false;
 				return result;
@@ -319,9 +460,9 @@ RaycastResult3D Map::RaycastWorldXY(const Vec3& start, const Vec3& direction, fl
 			}
 			fwdDistAtNextXCrossing += fwdDistPerXCrossing;
 		}
-		else if (fwdDistAtNextXCrossing > fwdDistAtNextYCrossing)	// y crosses first
+		else //(fwdDistAtNextXCrossing > fwdDistAtNextYCrossing)	// y crosses first
 		{
-			if (fwdDistAtNextYCrossing < distance)	//missed next crossing is past ray length
+			if (fwdDistAtNextYCrossing > distance)	//missed next crossing is past ray length
 			{
 				result.m_didImpact = false;
 				return result;
@@ -342,8 +483,8 @@ RaycastResult3D Map::RaycastWorldXY(const Vec3& start, const Vec3& direction, fl
 				}
 				return result;
 			}
+			fwdDistAtNextYCrossing += fwdDistPerYCrossing;
 		}
-		return result;
 	}
 	return result;
 }
@@ -357,24 +498,24 @@ RaycastResult3D Map::RaycastWorldZ(const Vec3& start, const Vec3& direction, flo
 
 	Vec3 ray = (start + (result.m_rayDirection * distance));
 
-	if (ray.z > 0)
+	if (result.m_rayDirection.z > 0)
 	{
-		auto t = (1 - start.z) / ray.z;
+		auto t = (1 - start.z) / (result.m_rayDirection.z * distance);
 		if (t > 0 && t < 1)
 		{
-			result.m_didImpact;
+			result.m_didImpact = true;
 			result.m_impactDistance = (distance * t);
 			result.m_impactPosition = start + (result.m_rayDirection * result.m_impactDistance);
 			result.m_impactNormal = Vec3(0,0,-1);
 			return result;
 		}
 	}
-	else if (ray.z < 0)
+	else if (result.m_rayDirection.z < 0)
 	{
-		auto t = (- start.z) / ray.z;
+		auto t = (- start.z) / (result.m_rayDirection.z * distance);
 		if (t > 0 && t < 1)
 		{
-			result.m_didImpact;
+			result.m_didImpact = true;
 			result.m_impactDistance = (distance * t);
 			result.m_impactPosition = start + (result.m_rayDirection * result.m_impactDistance);
 			result.m_impactNormal = Vec3(0,0,1);
@@ -384,9 +525,81 @@ RaycastResult3D Map::RaycastWorldZ(const Vec3& start, const Vec3& direction, flo
 	return result;
 }
 
-RaycastResult3D Map::RaycastWorldActors(const Vec3& start, const Vec3& direciton, float distance, Actor* owner /*= nullptr*/) const
+RaycastResult3D Map::RaycastWorldActors(const Vec3& start, const Vec3& direction, float distance, Actor* owner /*= nullptr*/) const
 {
-	RaycastResult3D result;
+	std::vector<RaycastResult3D*> hits;
+	Vec3 normDirection = direction.GetNormalized();
 
-	return result;
+	Vec3 ray = (start + (normDirection * distance));
+
+	RaycastResult3D miss;
+	miss.m_rayStartPosition = start;
+	miss.m_rayDirection = normDirection;
+	miss.m_rayLength = distance;
+
+	for (int index = 0; index < m_actors.size(); ++index)
+	{
+		if (IsPointInsideDisc2D(Vec2(start.x, start.y), Vec2(m_actors[index]->m_position.x, m_actors[index]->m_position.y), m_actors[index]->m_physicsRadius))
+		{
+			float aTop = m_actors[index]->m_position.z + m_actors[index]->m_physicsHeight;
+			float aBottom = m_actors[index]->m_position.z;
+			
+			if (start.z > aBottom && start.z < aTop)
+			{
+				RaycastResult3D result;
+				result.m_rayStartPosition = start;
+				result.m_rayDirection = direction.GetNormalized();
+				result.m_rayLength = distance;
+				result.m_didImpact = true;
+				result.m_impactDistance = 0.0f;
+				result.m_impactNormal = - result.m_rayDirection;
+				result.m_impactPosition = start;
+				return result;
+			}
+		}
+		float aTop = m_actors[index]->m_position.z + m_actors[index]->m_physicsHeight;
+		float aBottom = m_actors[index]->m_position.z;
+		std::vector<RaycastResult3D> intersectionChecks;
+
+		// intersection with top of cylinder
+		auto topT = ( aTop - start.z ) / (normDirection.z * distance);
+		if (topT > 0 && topT < 1)
+		{
+			RaycastResult3D topOfCylinder;
+			topOfCylinder.m_rayStartPosition = start;
+			topOfCylinder.m_rayDirection = normDirection;
+			topOfCylinder.m_rayLength = distance;
+			topOfCylinder.m_didImpact = true;
+			topOfCylinder.m_impactDistance = (distance * topT);
+			topOfCylinder.m_impactPosition = (start + (normDirection * topOfCylinder.m_impactDistance));
+			topOfCylinder.m_impactNormal = topOfCylinder.m_impactPosition - Vec3(m_actors[index]->m_position.x,m_actors[index]->m_position.y, topOfCylinder.m_impactPosition.z);		// might need to be reversed. impact point to center of actor for normal
+			intersectionChecks.push_back(topOfCylinder);
+		}
+
+		auto bottomT = (aBottom - start.z) / (normDirection.z * distance);
+		if (bottomT > 0 && bottomT < 1)
+		{
+			RaycastResult3D bottomOfCylinder;
+			bottomOfCylinder.m_rayStartPosition = start;
+			bottomOfCylinder.m_rayDirection = normDirection;
+			bottomOfCylinder.m_rayLength = distance;
+			bottomOfCylinder.m_didImpact = true;
+			bottomOfCylinder.m_impactDistance = (distance * bottomT);
+			bottomOfCylinder.m_impactPosition = (start + (normDirection * bottomOfCylinder.m_impactDistance));
+			bottomOfCylinder.m_impactNormal = bottomOfCylinder.m_impactPosition - Vec3(m_actors[index]->m_position.x, m_actors[index]->m_position.y, bottomOfCylinder.m_impactPosition.z);		// might need to be reversed. impact point to center of actor for normal
+			intersectionChecks.push_back(bottomOfCylinder);
+		}
+
+		Vec3 rayStartToActorCenter = Vec3(m_actors[index]->m_position - start);
+		Vec3 rayi = ray.GetNormalized();
+		// get perpendicular of the plane made between the endpoint of the ray and the center of the actor 
+		// to determine which way to rotate to get a j basis
+		Vec3 plane = m_actors[index]->m_position - ray;
+		//Vec3 rayj = rayi.GetRotatedAboutZDegrees(plane.)	//#ToDo what the fuck	 
+	}
+	
+
+	
+
+	return miss;
 }

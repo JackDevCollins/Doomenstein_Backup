@@ -11,7 +11,7 @@ Actor::Actor(Game* owner, float physicsHeight, float physicsRadius, Vec3 positio
 	,m_isStatic(isStatic)
 {
 	m_orientation.m_pitchDegrees = 90.f;
-	AddVertsForCylinder3D(m_physicsCylinder, m_position, m_position + Vec3(0, 0, physicsHeight), m_physicsRadius, m_color);
+	/*AddVertsForCylinder3D(m_physicsCylinder, m_position, m_position + Vec3(0, 0, physicsHeight), m_physicsRadius, m_color);*/
 	
 }
 
@@ -22,7 +22,8 @@ Actor::~Actor()
 
 void Actor::Update([[maybe_unused]]float deltaSeconds)		
 {
-	
+	m_physicsCylinder.clear();
+	AddVertsForMe();
 }
 
 void Actor::Render() const
@@ -40,6 +41,13 @@ void Actor::Render() const
 	g_engine->m_render->DrawVertexArray(m_physicsCylinder);
 }
 
+void Actor::AddVertsForMe()
+{
+	m_orientation.m_pitchDegrees = 90.f;
+	//AddVertsForCylinder3D(m_physicsCylinder, m_position, Vec3(m_position.x , m_position.y, m_position.z + m_physicsHeight), m_physicsRadius, m_color);
+	AddVertsForCylinder3D(m_physicsCylinder, m_position, m_physicsHeight, m_physicsRadius, m_color);
+}
+
 Mat44 Actor::GetModelToWorldTransform() const
 {	
 	// make a translation matrix, make a rotation matrix, append rotation to translation
@@ -50,3 +58,7 @@ Mat44 Actor::GetModelToWorldTransform() const
 	return translationMatrix;
 }
 
+void Actor::TestPojectileInput(Vec3 movement)
+{
+	m_position += movement * 100.;
+}

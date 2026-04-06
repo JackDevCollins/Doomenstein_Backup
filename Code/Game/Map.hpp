@@ -31,7 +31,7 @@ public:
 	bool AreCoordsInBounds(int x, int y) const;
 	const Tile* GetTile(int x, int y) const;
 
-	void Update();
+	void Update(float deltaSeconds);
 	void CollideActors();
 	void CollideActors(Actor* actorA, Actor* actorB);
 	void CollideActorsWithMap();
