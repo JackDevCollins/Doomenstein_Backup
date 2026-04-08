@@ -347,6 +347,12 @@ void Map::Render()
 
 RaycastResult3D Map::RaycastAll(const Vec3& start, const Vec3& direction, float distance, Actor* owner /*= nullptr*/) const
 {
+	RaycastResult3D result;
+	result.m_didImpact = false;
+	result.m_rayDirection = direction;
+	result.m_rayLength = distance;
+	result.m_rayStartPosition = start;
+
 	float lowestDistance = 100000000.f;
 	int lowestIndex = -1;
 
@@ -367,6 +373,10 @@ RaycastResult3D Map::RaycastAll(const Vec3& start, const Vec3& direction, float 
 					lowestIndex = index;
 					lowestDistance = results[index].m_impactDistance;
 				}
+		}
+		else
+		{
+			continue;
 		}
 	}
 	return results[lowestIndex];
@@ -527,18 +537,19 @@ RaycastResult3D Map::RaycastWorldZ(const Vec3& start, const Vec3& direction, flo
 
 RaycastResult3D Map::RaycastWorldActors(const Vec3& start, const Vec3& direction, float distance, Actor* owner /*= nullptr*/) const
 {
-	std::vector<RaycastResult3D*> hits;
+	RaycastResult3D closestHit;
+	closestHit.m_didImpact = false;
+	closestHit.m_impactDistance = distance + 1.0f;
+	
 	Vec3 normDirection = direction.GetNormalized();
 
 	Vec3 ray = (start + (normDirection * distance));
 
-	RaycastResult3D miss;
-	miss.m_rayStartPosition = start;
-	miss.m_rayDirection = normDirection;
-	miss.m_rayLength = distance;
 
 	for (int index = 0; index < m_actors.size(); ++index)
-	{
+	{	
+		Actor* actor = m_actors[index];
+		
 		if (IsPointInsideDisc2D(Vec2(start.x, start.y), Vec2(m_actors[index]->m_position.x, m_actors[index]->m_position.y), m_actors[index]->m_physicsRadius))
 		{
 			float aTop = m_actors[index]->m_position.z + m_actors[index]->m_physicsHeight;
@@ -557,49 +568,147 @@ RaycastResult3D Map::RaycastWorldActors(const Vec3& start, const Vec3& direction
 				return result;
 			}
 		}
-		float aTop = m_actors[index]->m_position.z + m_actors[index]->m_physicsHeight;
-		float aBottom = m_actors[index]->m_position.z;
-		std::vector<RaycastResult3D> intersectionChecks;
-
-		// intersection with top of cylinder
-		auto topT = ( aTop - start.z ) / (normDirection.z * distance);
-		if (topT > 0 && topT < 1)
+		Vec2 cylindercenterXY = Vec2(m_actors[index]->m_position.x, m_actors[index]->m_position.y);
+		float cylinderMinZ = m_actors[index]->m_position.z;
+		float cylinderMaxZ = cylinderMinZ + m_actors[index]->m_physicsHeight;
+		RaycastResult3D cylinderRaycast = RaycastVsCylinderZ3D(start, direction, distance, cylindercenterXY, cylinderMinZ, cylinderMaxZ, m_actors[index]->m_physicsRadius);
+		if (cylinderRaycast.m_didImpact && cylinderRaycast.m_impactDistance < closestHit.m_impactDistance)
 		{
-			RaycastResult3D topOfCylinder;
-			topOfCylinder.m_rayStartPosition = start;
-			topOfCylinder.m_rayDirection = normDirection;
-			topOfCylinder.m_rayLength = distance;
-			topOfCylinder.m_didImpact = true;
-			topOfCylinder.m_impactDistance = (distance * topT);
-			topOfCylinder.m_impactPosition = (start + (normDirection * topOfCylinder.m_impactDistance));
-			topOfCylinder.m_impactNormal = topOfCylinder.m_impactPosition - Vec3(m_actors[index]->m_position.x,m_actors[index]->m_position.y, topOfCylinder.m_impactPosition.z);		// might need to be reversed. impact point to center of actor for normal
-			intersectionChecks.push_back(topOfCylinder);
+			closestHit = cylinderRaycast;
 		}
-
-		auto bottomT = (aBottom - start.z) / (normDirection.z * distance);
-		if (bottomT > 0 && bottomT < 1)
-		{
-			RaycastResult3D bottomOfCylinder;
-			bottomOfCylinder.m_rayStartPosition = start;
-			bottomOfCylinder.m_rayDirection = normDirection;
-			bottomOfCylinder.m_rayLength = distance;
-			bottomOfCylinder.m_didImpact = true;
-			bottomOfCylinder.m_impactDistance = (distance * bottomT);
-			bottomOfCylinder.m_impactPosition = (start + (normDirection * bottomOfCylinder.m_impactDistance));
-			bottomOfCylinder.m_impactNormal = bottomOfCylinder.m_impactPosition - Vec3(m_actors[index]->m_position.x, m_actors[index]->m_position.y, bottomOfCylinder.m_impactPosition.z);		// might need to be reversed. impact point to center of actor for normal
-			intersectionChecks.push_back(bottomOfCylinder);
-		}
-
-		Vec3 rayStartToActorCenter = Vec3(m_actors[index]->m_position - start);
-		Vec3 rayi = ray.GetNormalized();
-		// get perpendicular of the plane made between the endpoint of the ray and the center of the actor 
-		// to determine which way to rotate to get a j basis
-		Vec3 plane = m_actors[index]->m_position - ray;
-		//Vec3 rayj = rayi.GetRotatedAboutZDegrees(plane.)	//#ToDo what the fuck	 
 	}
-	
 
-	
+	if (closestHit.m_didImpact)
+	{
+		return closestHit;
+	}
 
+	RaycastResult3D miss;
+	miss.m_didImpact = false;
+	miss.m_rayStartPosition = start;
+	miss.m_rayDirection = normDirection;
+	miss.m_rayLength = distance;
 	return miss;
+
 }
+
+// 		std::vector<RaycastResult3D> intersectionChecks;
+// 
+// 		float aTop = m_actors[index]->m_position.z + m_actors[index]->m_physicsHeight;
+// 		float aBottom = m_actors[index]->m_position.z;
+// 		float rayDeltaZ = normDirection.z * distance;
+// 		// intersection with top of cylinder
+// 
+// 		
+// 		float topT = ( aTop - start.z ) / rayDeltaZ;
+// 		RaycastResult3D* topResult = nullptr;
+// 		if (topT > 0 && topT < 1)
+// 		{
+// 			RaycastResult3D topOfCylinder;
+// 			topOfCylinder.m_rayStartPosition = start;
+// 			topOfCylinder.m_rayDirection = normDirection;
+// 			topOfCylinder.m_rayLength = distance;
+// 			topOfCylinder.m_didImpact = true;
+// 			topOfCylinder.m_impactDistance = (distance * topT);
+// 			topOfCylinder.m_impactPosition = (start + (normDirection * topOfCylinder.m_impactDistance));
+// 			topOfCylinder.m_impactNormal = topOfCylinder.m_impactPosition - Vec3(m_actors[index]->m_position.x,m_actors[index]->m_position.y, topOfCylinder.m_impactPosition.z);		// might need to be reversed. impact point to center of actor for normal
+// 			intersectionChecks.push_back(topOfCylinder);
+// 			topResult = &topOfCylinder;
+// 		}
+// 		float bottomT = (aBottom - start.z) / rayDeltaZ;
+// 		RaycastResult3D* bottomResult = nullptr;
+// 		if (bottomT > 0 && bottomT < 1)
+// 		{
+// 			RaycastResult3D bottomOfCylinder;
+// 			bottomOfCylinder.m_rayStartPosition = start;
+// 			bottomOfCylinder.m_rayDirection = normDirection;
+// 			bottomOfCylinder.m_rayLength = distance;
+// 			bottomOfCylinder.m_didImpact = true;
+// 			bottomOfCylinder.m_impactDistance = (distance * bottomT);
+// 			bottomOfCylinder.m_impactPosition = (start + (normDirection * bottomOfCylinder.m_impactDistance));
+// 			bottomOfCylinder.m_impactNormal = bottomOfCylinder.m_impactPosition - Vec3(m_actors[index]->m_position.x, m_actors[index]->m_position.y, bottomOfCylinder.m_impactPosition.z);		// might need to be reversed. impact point to center of actor for normal
+// 			intersectionChecks.push_back(bottomOfCylinder);
+// 			bottomResult = &bottomOfCylinder;
+// 		}
+// 
+// 		//Vec3 rayStartToActorCenter = Vec3(m_actors[index]->m_position - start);
+// 
+// 		Vec2 start2D = Vec2(start.x, start.y);
+// 		Vec2 dir2D = Vec2(direction.x,direction.y);
+// 		
+// 		Vec3 rayXYonly = Vec3(ray.x, ray.y, 0.f);
+// 		float XYmagSquared = DotProduct3D(ray, rayXYonly);
+// 		float lengthOfRayinXYPlane = GetDistance2D(start2D, Vec2(ray.x,ray.y));
+// 		//sqrtf(XYmagSquared);
+// 		Vec2 discIn2d(m_actors[index]->m_position.x,m_actors[index]->m_position.y);
+// 		Vec3 fwdXYDirection = (rayXYonly / lengthOfRayinXYPlane);
+// 		Vec2 fwd2d = Vec2(fwdXYDirection.x,fwdXYDirection.y);
+// 
+// 		RaycastResult2D discRaycast = RaycastVsDisc2D(start2D, fwd2d, lengthOfRayinXYPlane, discIn2d, m_actors[index]->m_physicsRadius);
+// 		float widthT = 10000000;
+// 		RaycastResult3D* widthResult = nullptr;
+// 		if (discRaycast.m_didImpact)
+// 		{
+// 			float xydiscT = (discRaycast.m_impactDist / lengthOfRayinXYPlane);
+// 			widthT = discRaycast.m_impactDist / lengthOfRayinXYPlane;
+// 			//widthT = (xydiscT * distance) / lengthOfRayinXYPlane;
+// 			//widthT = distance * xydiscT;
+// 			float impactDistance = (distance * widthT);
+// 			Vec3 impactPosition = start + (normDirection * impactDistance);
+// 
+// 
+// 			RaycastResult3D widthOfCylinder;
+// 			widthOfCylinder.m_rayStartPosition = start;
+// 			widthOfCylinder.m_rayDirection = normDirection;
+// 			widthOfCylinder.m_rayLength = distance;
+// 			widthOfCylinder.m_didImpact = true;
+// 			widthOfCylinder.m_impactDistance = impactDistance;
+// 			widthOfCylinder.m_impactPosition = impactPosition;
+// 			widthOfCylinder.m_impactNormal = widthOfCylinder.m_impactPosition - Vec3(m_actors[index]->m_position.x, m_actors[index]->m_position.y, widthOfCylinder.m_impactPosition.z);		// might need to be reversed. impact point to center of actor for normal
+// 			intersectionChecks.push_back(widthOfCylinder);
+// 			widthResult = &widthOfCylinder;
+// 		}
+// 
+// 		if (topT < bottomT && topT < widthT)
+// 		{
+// 			if (topT > 0 && topT < 1)
+// 			{
+// 				hits.push_back(topResult);
+// 			}
+// 		}
+// 		if (bottomT < topT && bottomT < widthT)
+// 		{
+// 			if (bottomT > 0 && bottomT < 1)
+// 			{
+// 				hits.push_back(bottomResult);
+// 			}
+// 		}
+// 		if (widthT < topT && widthT < topT)
+// 		{
+// 			if (widthT > 0 && widthT < 1)
+// 			{
+// 				hits.push_back(widthResult);
+// 			}
+// 		}
+// 	}
+// 	float lowestImpactD = 10000000.f;
+// 	int lowestIndex = -1;
+// 	if (hits.size() > 0)
+// 	{
+// 		for (int index = 0; index < hits.size(); ++index)
+// 		{
+// 			if (hits[index]->m_impactDistance < lowestImpactD)
+// 			{
+// 				lowestImpactD = hits[index]->m_impactDistance;
+// 				lowestIndex = index;
+// 			}
+// 		}
+// 		if (lowestIndex != -1)
+// 		{
+// 			return *hits[lowestIndex];
+// 		}
+// 
+// 	}
+// 
+// 	return miss;
+// }
