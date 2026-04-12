@@ -370,7 +370,7 @@ void Game::RenderText() const
 
 	BitmapFont& font = *g_defaultFont;
 
-	font.AddVertsForText3DAtOriginXForward(textVerts, 1.f, "Test Phrase");
+	font.AddVertsForText3DAtOriginXForward(textVerts, 1.f, "Dickbutt");
 
 
 	g_engine->m_render->BindTexture(&font.GetTexture());

@@ -45,7 +45,7 @@ void Actor::AddVertsForMe()
 {
 	m_orientation.m_pitchDegrees = 90.f;
 	//AddVertsForCylinder3D(m_physicsCylinder, m_position, Vec3(m_position.x , m_position.y, m_position.z + m_physicsHeight), m_physicsRadius, m_color);
-	AddVertsForCylinder3D(m_physicsCylinder, m_position, m_physicsHeight, m_physicsRadius, m_color);
+	AddVertsForZCylinder3D(m_physicsCylinder, m_position, m_physicsHeight, m_physicsRadius, m_color);
 }
 
 Mat44 Actor::GetModelToWorldTransform() const
