@@ -28,17 +28,21 @@ void Actor::Update([[maybe_unused]]float deltaSeconds)
 
 void Actor::Render() const
 {
-	g_engine->m_render->BindTexture(nullptr);
-	g_engine->m_render->BindShader(nullptr);
-	g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
-	g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
-	g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
-	g_engine->m_render->SetModelConstants(Mat44(), m_color);
-	g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+	if (m_controller == nullptr)
+	{
+		g_engine->m_render->BindTexture(nullptr);
+		g_engine->m_render->BindShader(nullptr);
+		g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
+		g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
+		g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
+		g_engine->m_render->SetModelConstants(Mat44(), m_color);
+		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
 
-	g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);;
-	g_engine->m_render->SetModelConstants(Mat44(), Rgba8(m_color.r + 10.f, m_color.g + 10.f, m_color.b + 10.f)); //Rgba8((m_color.r / (unsigned char)1.5), (m_color.g / (unsigned char)1.5), (m_color.b / (unsigned char)1.5)));
-	g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);;
+		g_engine->m_render->SetModelConstants(Mat44(), Rgba8(m_color.r + 10.f, m_color.g + 10.f, m_color.b + 10.f)); //Rgba8((m_color.r / (unsigned char)1.5), (m_color.g / (unsigned char)1.5), (m_color.b / (unsigned char)1.5)));
+		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+
+	}
 }
 
 void Actor::AddVertsForMe()

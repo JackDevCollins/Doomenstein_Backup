@@ -6,6 +6,9 @@
 #include "Game/Tile.hpp"
 #include "Game/MapDefinition.hpp"
 #include "Game/TileDefinition.hpp"
+#include "Game/ActorDefinition.hpp"
+#include "Game/ProjectileActorDefinition.hpp"
+#include "Game/WeaponDefinition.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Renderer/Camera.hpp"
 #include "Engine/Core/Rgba8.hpp"
@@ -63,9 +66,9 @@ void Game::Startup()
 
 	TileDefinition::InitializeDefinitions("Data/Definitions/TileDefinitions.xml");
 	MapDefinition::InitializeDefinitions("Data/Definitions/MapDefinitions.xml");
-	//ActorDefinition::InitializeDefinitions("Data/Definitions/ActorDefiniitions.xml");
+	ActorDefinition::InitializeDefinitions("Data/Definitions/ActorDefiniitions.xml");
 	//ProjectileActorDefinition::InitializeDefinitions("Data/Definitions/ProjectileActorDefinitions.xml");
-	//WeaponDefinition::InitializeDefinitions("Data/Definitions/WeaponDefinitions.xml");
+	WeaponDefinition::InitializeDefinitions("Data/Definitions/WeaponDefinitions.xml");
 }
 
 

@@ -46,6 +46,27 @@
     <ClCompile Include="Actor.cpp">
       <Filter>Gameplay</Filter>
     </ClCompile>
+    <ClCompile Include="ActorDefinition.cpp">
+      <Filter>Code\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="ActorHandle.cpp">
+      <Filter>Code\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Controller.cpp">
+      <Filter>Code\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="AIController.cpp">
+      <Filter>Code\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerController.cpp">
+      <Filter>Code\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="ProjectileActorDefinition.cpp">
+      <Filter>Code\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponDefinition.cpp">
+      <Filter>Code\Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.hpp">
@@ -77,6 +98,27 @@
     </ClInclude>
     <ClInclude Include="Actor.hpp">
       <Filter>Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="ActorDefinition.hpp">
+      <Filter>Code\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="ActorHandle.hpp">
+      <Filter>Code\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Controller.hpp">
+      <Filter>Code\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="AIController.hpp">
+      <Filter>Code\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerController.hpp">
+      <Filter>Code\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="ProjectileActorDefinition.hpp">
+      <Filter>Code\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="WeaponDefinition.hpp">
+      <Filter>Code\Game</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -2,6 +2,7 @@
 #include "Game/MapDefinition.hpp"
 #include "Game/TileDefinition.hpp"
 #include "Game/Tile.hpp"
+#include "Game/ActorHandle.hpp"
 
 class Game;
 class Actor;
@@ -39,6 +40,9 @@ public:
 
 	void CreateTestActors();
 
+	Actor* SpawnActor(const SpawnInfo& spawnInfo);
+	Actor* GetActorByHandle(const ActorHandle handle) const;
+
 	void Render();
 
 	RaycastResult3D RaycastAll(const Vec3& start, const Vec3& direciton, float distance, Actor* owner = nullptr) const;
@@ -61,6 +65,7 @@ public:
 	IndexBuffer*				m_indexBuffer = nullptr;
 
 	std::vector<Actor*>			m_actors;
+	unsigned int				m_nextActorUID = 0;
 
 	Vec3						m_sunDirection = Vec3(2,1,-1);
 	float						m_sunIntensity = 0.85f;
