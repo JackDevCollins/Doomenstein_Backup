@@ -17,5 +17,5 @@ public:
 	static const unsigned int MAX_ACTOR_INDEX = 0x0000ffffu;
 
 private:
-	unsigned int m_data;
+	unsigned int m_data = 0xFFFFFFFF;
 };

@@ -237,6 +237,7 @@
     <ClCompile Include="ProjectileActorDefinition.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="TileDefinition.cpp" />
+    <ClCompile Include="Weapon.cpp" />
     <ClCompile Include="WeaponDefinition.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -256,6 +257,7 @@
     <ClInclude Include="ProjectileActorDefinition.hpp" />
     <ClInclude Include="Tile.hpp" />
     <ClInclude Include="TileDefinition.hpp" />
+    <ClInclude Include="Weapon.hpp" />
     <ClInclude Include="WeaponDefinition.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

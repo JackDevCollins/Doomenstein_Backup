@@ -328,6 +328,36 @@ void Map::CreateTestActors()
 	m_game->m_player->m_testProjectile = TestProjectile01;
 }
 
+Actor* Map::SpawnActor(const SpawnInfo& spawnInfo)
+{
+	Actor* newActor = new Actor(this, m_game, ActorDefinition::GetByName(spawnInfo.actorDef));
+	newActor->m_position = spawnInfo.position;
+	newActor->m_orientation = spawnInfo.orientation;
+	newActor->m_velocity = spawnInfo.velocity;
+
+	for (int index = 0; index < m_actors.size(); ++index)
+	{
+		if (m_actors[index] == nullptr)
+		{
+			newActor->m_handle = ActorHandle(m_nextActorUID, (unsigned int) index);
+			m_nextActorUID += 1;
+			break;
+		}
+	}
+	return newActor;
+}
+
+Actor* Map::GetActorByHandle(const ActorHandle handle) const
+{
+	int index = handle.GetIndex();
+	if (m_actors[index]->m_handle == handle)
+	{
+		return m_actors[index];
+	}
+	else
+	return nullptr;
+}
+
 void Map::Render()
 {
 	g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);

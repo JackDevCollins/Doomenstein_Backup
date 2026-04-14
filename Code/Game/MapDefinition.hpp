@@ -3,12 +3,26 @@
 #include <string>
 #include "Engine/Math/IntVec2.hpp"
 #include "Engine/Core/XmlUtils.hpp"
+#include "Engine/Math/EulerAngles.hpp"
+#include "Engine/Math/Vec3.hpp"
 
 class Image;
 class SpriteSheet;
 class Shader;
 class Texture;
 struct IntVec2;
+
+class SpawnInfo
+{
+public:
+
+	std::string  actorDef = "_";
+	Vec3		 position = Vec3(0, 0, 0);
+	EulerAngles	 orientation = EulerAngles(0, 0, 0);
+	Vec3		 velocity = Vec3(0, 0, 0);
+
+};
+
 
 class MapDefinition
 {

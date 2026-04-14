@@ -1,6 +1,12 @@
 #include "Game/Actor.hpp"
+#include "Game/Weapon.hpp"
+#include "Game/PlayerController.hpp"
+#include "Game/AIController.hpp"
+#include "Game/WeaponDefinition.hpp"
 #include "Engine/Math/Mat44.hpp"
 #include "Engine/Core/VertexUtils.hpp"
+#include "Engine/Core/Timer.hpp"
+#include "Game/Game.hpp"
 
 Actor::Actor(Game* owner, float physicsHeight, float physicsRadius, Vec3 position, Rgba8 color, bool isStatic)
 	:m_game(owner)
@@ -15,6 +21,23 @@ Actor::Actor(Game* owner, float physicsHeight, float physicsRadius, Vec3 positio
 	
 }
 
+Actor::Actor(Map* map, Game* owner, const ActorDefinition* actorDef)
+{
+	m_definition = actorDef;
+	m_game = owner;
+	m_map= map;
+	m_corpseLifetime = actorDef->m_corpseLifetime;
+	m_decomposeTimer = new Timer(m_corpseLifetime, m_game->m_gameClock);
+	m_health = actorDef->m_health;
+	m_color	= Rgba8::WHITE;
+	m_physicsHeight = actorDef->m_height;
+	m_physicsRadius = actorDef->m_collision_radius;
+	m_isStatic;
+	
+
+// 	m_inventory = ;
+// 	m_owner;
+}	
 Actor::~Actor()
 {
 
@@ -52,6 +75,11 @@ void Actor::AddVertsForMe()
 	AddVertsForZCylinder3D(m_physicsCylinder, m_position, m_physicsHeight, m_physicsRadius, m_color);
 }
 
+void Actor::Attack()
+{	
+	m_currentWeapon->Fire();
+}
+
 Mat44 Actor::GetModelToWorldTransform() const
 {	
 	// make a translation matrix, make a rotation matrix, append rotation to translation
@@ -65,4 +93,10 @@ Mat44 Actor::GetModelToWorldTransform() const
 void Actor::TestPojectileInput(Vec3 movement)
 {
 	m_position += movement * 100.;
+}
+
+void Actor::Damage(Actor* damager)
+{
+	m_health -= damager->m_owner->m_currentWeapon->m_definition->m_rayDamage;
+	m_aiController->DamagedBy(damager->m_owner);
 }

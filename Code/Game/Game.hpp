@@ -34,7 +34,6 @@ public:
 	void Update( float deltaSeconds );
 	void Render() const;
 	void Shutdown();
-	RandomNumberGenerator const m_rng;
  
 	void CheckInputs();
 	void RenderEntities() const;
@@ -57,7 +56,6 @@ public:
 	Camera*				m_worldCamera = nullptr;
 	Camera*				m_screenCamera = nullptr;
 	Player*				m_player = nullptr;
-	std::vector<Vertex> m_grid;
 	
 	//-----------------------------------------------------------------------------------------------
 	Map*				m_currentMap;

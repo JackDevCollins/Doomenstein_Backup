@@ -40,8 +40,11 @@ public:
 
 	void CreateTestActors();
 
-	Actor* SpawnActor(const SpawnInfo& spawnInfo);
-	Actor* GetActorByHandle(const ActorHandle handle) const;
+	void	DeleteDestroyedActors();
+	Actor*  SpawnActor(const SpawnInfo& spawnInfo);
+	Actor*  GetActorByHandle(const ActorHandle handle) const;
+	Actor*  GetClosestVisibleEnemy();
+	void	DebugPossessNext();
 
 	void Render();
 

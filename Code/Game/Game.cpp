@@ -66,7 +66,7 @@ void Game::Startup()
 
 	TileDefinition::InitializeDefinitions("Data/Definitions/TileDefinitions.xml");
 	MapDefinition::InitializeDefinitions("Data/Definitions/MapDefinitions.xml");
-	ActorDefinition::InitializeDefinitions("Data/Definitions/ActorDefiniitions.xml");
+	ActorDefinition::InitializeDefinitions("Data/Definitions/ActorDefinitions.xml");
 	//ProjectileActorDefinition::InitializeDefinitions("Data/Definitions/ProjectileActorDefinitions.xml");
 	WeaponDefinition::InitializeDefinitions("Data/Definitions/WeaponDefinitions.xml");
 }
@@ -357,7 +357,6 @@ void Game::RenderEntities() const
 
 	g_engine->m_render->SetModelConstants();
 	g_engine->m_render->BindTexture(nullptr);
-	g_engine->m_render->DrawVertexArray(m_grid);
 }
 
 void Game::RenderText() const 

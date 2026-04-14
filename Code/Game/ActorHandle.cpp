@@ -1,14 +1,16 @@
 #include "Game/ActorHandle.hpp"
 
 
-ActorHandle::ActorHandle()
-{
+const ActorHandle ActorHandle::INVALID = ActorHandle();
 
+ActorHandle::ActorHandle()
+	: m_data(0xFFFFFFFF)
+{
 }
 
 ActorHandle::ActorHandle(unsigned int uid, unsigned int index)
 {
-	
+	m_data = (static_cast<unsigned int>(uid) << 16) | (static_cast<unsigned int>(index) & MAX_ACTOR_INDEX);
 }
 
 bool ActorHandle::IsValid() const
@@ -21,25 +23,15 @@ bool ActorHandle::IsValid() const
 
 unsigned int ActorHandle::GetIndex() const
 {
-
+	return m_data & MAX_ACTOR_INDEX;
 }
 
 bool ActorHandle::operator==(const ActorHandle& other) const
 {
-	if (m_data == other.m_data)
-	{
-		return true;
-	}
-	
-	return false;
+	return m_data == other.m_data;
 }
 
 bool ActorHandle::operator!=(const ActorHandle& other) const
 {
-	if (m_data == other.m_data)
-	{
-		return false;
-	}
-	
-	return true;
+	return m_data != other.m_data;
 }

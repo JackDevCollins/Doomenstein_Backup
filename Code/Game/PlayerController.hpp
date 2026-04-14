@@ -1,6 +1,9 @@
 #pragma once
 #include "Game/Controller.hpp"
+#include "Engine/Math/Vec3.hpp"
+#include "Engine/Math/EulerAngles.hpp"
 
+class Camera;
 
 class PlayerController : public Controller 
 {
