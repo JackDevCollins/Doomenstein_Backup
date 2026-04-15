@@ -1,4 +1,5 @@
 #pragma once
+#include "Game/GameCommon.hpp"
 #include <vector>
 #include <string>
 #include "Engine/Core/XmlUtils.hpp"
@@ -40,4 +41,7 @@ public:
 	Vec2									m_spriteSize;
 	Vec2									m_spritePivot;
 
+	std::vector<animationDefinition>		m_animations;
+
+	Strings									m_sounds;
 };

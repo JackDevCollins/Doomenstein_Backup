@@ -1,10 +1,15 @@
 #include "Game/ActorDefinition.hpp"
 #include "Engine/Core/XmlUtils.hpp"
+#include "Engine/Core/ErrorWarningAssert.hpp"
 
 void ActorDefinition::InitializeDefinitions(const char* path)
 {
 	XmlDocument document;
 	XmlResult result = document.LoadFile(path);
+	if (result != 0)
+	{
+		ERROR_AND_DIE("XML LOADING ERROR")
+	}
 	XmlElement* rootElement = document.RootElement();
 	XmlElement* actorDefinitionElement = rootElement->FirstChildElement();
 	while (actorDefinitionElement != nullptr)

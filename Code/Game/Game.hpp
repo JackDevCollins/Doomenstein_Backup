@@ -8,6 +8,7 @@ class Player;
 class Map;
 class Clock;
 class Timer;
+class PlayerController;
 
 enum GameState
 {
@@ -53,9 +54,9 @@ public:
 	
 	App*				m_app;
 	
-	Camera*				m_worldCamera = nullptr;
+	Camera*				m_playerCamera = nullptr;
 	Camera*				m_screenCamera = nullptr;
-	Player*				m_player = nullptr;
+	PlayerController*	m_player = nullptr;
 	
 	//-----------------------------------------------------------------------------------------------
 	Map*				m_currentMap;

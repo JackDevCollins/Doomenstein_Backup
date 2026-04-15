@@ -1,9 +1,14 @@
 #include "Game/TileDefinition.hpp"
+#include "Engine/Core/ErrorWarningAssert.hpp"
 
 void TileDefinition::InitializeDefinitions(const char* path)
 {
 	XmlDocument document;
 	XmlResult result = document.LoadFile(path);
+	if (result != 0)
+	{
+		ERROR_AND_DIE("XML LOADING ERROR")
+	}
 	XmlElement* rootElement = document.RootElement();
 	XmlElement* tileDefinitionElement = rootElement->FirstChildElement();
 	while (tileDefinitionElement != nullptr)

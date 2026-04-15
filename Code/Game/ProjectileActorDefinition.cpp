@@ -1,11 +1,15 @@
 #include "Game/ProjectileActorDefinition.hpp"
-
+#include "Engine/Core/ErrorWarningAssert.hpp"
 
 
 void ProjectileActorDefinition::InitializeDefinitions(const char* path)
 {
 	XmlDocument document;
 	XmlResult result = document.LoadFile(path);
+	if (result != 0)
+	{
+		ERROR_AND_DIE("XML LOADING ERROR")
+	}
 	XmlElement* rootElement = document.RootElement();
 	XmlElement* projectileActorDefinitionElement = rootElement->FirstChildElement();
 	while (projectileActorDefinitionElement != nullptr)

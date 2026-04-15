@@ -1,7 +1,7 @@
 #include "Game/Game.hpp"
 #include "Game/App.hpp"
 #include "Game/GameCommon.hpp"
-#include "Game/Player.hpp"
+#include "Game/PlayerController.hpp"
 #include "Game/Map.hpp"
 #include "Game/Tile.hpp"
 #include "Game/MapDefinition.hpp"
@@ -36,7 +36,7 @@
 Game::Game(App* owner)
 	: m_app(owner)
 {
-	m_worldCamera = new Camera();
+	m_playerCamera = new Camera();
 	m_screenCamera = new Camera();
 
 	m_gameClock = new Clock(*g_systemClock);
@@ -44,7 +44,7 @@ Game::Game(App* owner)
 	m_gameTimer01 = new Timer(.01, m_gameClock);
 	m_gameTimer01->Start();
 
-	m_worldCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
+	m_playerCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
 	//m_screenCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
 	
 	
@@ -60,8 +60,6 @@ Game::~Game()
 
 void Game::Startup()
 {
-	g_app->m_game = this;
-	Vec2 worldCenter( WORLD_SIZE_X * 0.5f, WORLD_SIZE_Y * 0.5f );
 	g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);				// #ToDo what other modes do i need to set?
 
 	TileDefinition::InitializeDefinitions("Data/Definitions/TileDefinitions.xml");
@@ -121,7 +119,7 @@ void Game::Render() const
 
 	if (m_currentGameState == GameState::GAMESTATE_GAME)
 	{
-		g_engine->m_render->BeginCamera(*m_worldCamera);
+		g_engine->m_render->BeginCamera(*m_playerCamera);
 
 		m_currentMap->Render();
 
@@ -131,9 +129,9 @@ void Game::Render() const
 
 		RenderText();
 
-		DebugRenderWorld(*m_worldCamera);
+		DebugRenderWorld(*m_playerCamera);
 	
-		g_engine->m_render->EndCamera(*m_worldCamera);
+		g_engine->m_render->EndCamera(*m_playerCamera);
 	}
 
 	//	For UI elements
@@ -148,7 +146,7 @@ void Game::Render() const
 		{
 // 			position = m_player->m_position;
 // 			orientation = m_player->m_orientation;
-			controlMode = m_player->m_controlProjectile;
+//			controlMode = m_player->m_controlProjectile;
 		}
 		
 		AABB2 screenBounds = AABB2(m_screenCamera->GetOrthoBottomLeft(), m_screenCamera->GetOrthoTopRight());
@@ -354,9 +352,6 @@ void Game::CheckInputs()
 
 void Game::RenderEntities() const
 {
-
-	g_engine->m_render->SetModelConstants();
-	g_engine->m_render->BindTexture(nullptr);
 }
 
 void Game::RenderText() const 
@@ -382,10 +377,10 @@ void Game::RenderText() const
 
 void Game::UpdateEntities([[maybe_unused]]float deltaSeconds)
 {
-	if (m_player)
-	{
-		m_player->Update(deltaSeconds);
-	}
+// 	if (m_player)
+// 	{
+// 		m_player->Update(deltaSeconds);
+// 	}
 }
 
 void Game::UpdateCameras([[maybe_unused]]float deltaSeconds)
@@ -394,12 +389,12 @@ void Game::UpdateCameras([[maybe_unused]]float deltaSeconds)
 	m_screenCamera->SetOrthoView(Vec2(0.f, 0.f), clientDimentions);
 
 	float tempAspect = g_engine->m_window->m_config.m_clientAspect;										// #ToDo my client aspect from config (16/10) does not give the desired results. 2 does
-	m_worldCamera->SetPerspectiveView(tempAspect, 60.f, 0.1f, 100.0f);
+	m_playerCamera->SetPerspectiveView(tempAspect, 60.f, 0.1f, 100.0f);
 	
 	if (m_player)
 	{
-		m_worldCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation);
-		m_worldCamera->SetCameraToRenderTransform(m_worldCamera->GetCameraToRenderTransform());
+		m_playerCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation);
+		m_playerCamera->SetCameraToRenderTransform(m_playerCamera->GetCameraToRenderTransform());
 	}
 	
 }
@@ -417,9 +412,9 @@ void Game::EnterState(GameState state)	// state is what you are entering
 
 		if (m_player == nullptr)
 		{
-			m_player = new Player(this);
-			m_player->m_position = Vec3(2.5f,8.5f,0.5f);
-			m_worldCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation);
+			//m_player = new Player(this);
+			//m_player->m_position = Vec3(2.5f,8.5f,0.5f);
+			//m_playerCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation);
 		}
 
 	}
@@ -431,8 +426,8 @@ void Game::ExitState(GameState state)	// state is what you are exiting
 	{
 		m_currentMap->~Map();
 		m_currentMap = nullptr;
-		m_player->~Player();
-		m_player = nullptr;
+// 		m_player->~Player();
+// 		m_player = nullptr;
 	}
 }
 

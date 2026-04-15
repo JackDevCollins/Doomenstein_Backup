@@ -21,22 +21,40 @@ Actor::Actor(Game* owner, float physicsHeight, float physicsRadius, Vec3 positio
 	
 }
 
-Actor::Actor(Map* map, Game* owner, const ActorDefinition* actorDef)
+Actor::Actor(Map* map, Game* game, const ActorDefinition* actorDef)
 {
-	m_definition = actorDef;
-	m_game = owner;
-	m_map= map;
+	m_definition	 = actorDef;
+	m_game			 = game;
+	m_map			 = map;
 	m_corpseLifetime = actorDef->m_corpseLifetime;
 	m_decomposeTimer = new Timer(m_corpseLifetime, m_game->m_gameClock);
-	m_health = actorDef->m_health;
-	m_color	= Rgba8::WHITE;
-	m_physicsHeight = actorDef->m_height;
-	m_physicsRadius = actorDef->m_collision_radius;
-	m_isStatic;
-	
+	m_health		 = actorDef->m_health;
+	m_color			 = Rgba8::WHITE;
+	m_physicsHeight  = actorDef->m_height;
+	m_physicsRadius  = actorDef->m_collision_radius;
 
-// 	m_inventory = ;
-// 	m_owner;
+	for (int inventoryIndex = 0; inventoryIndex < actorDef->m_inventory.size(); ++inventoryIndex)
+	{
+		std::string item = actorDef->m_inventory[inventoryIndex];
+		Weapon* newItem = new Weapon(this, WeaponDefinition::GetByName(item));
+		m_inventory.push_back(newItem);
+	}
+
+	if (m_definition->m_name == "SpawnPoint")
+	{
+		m_isStatic = true;
+	}
+	if (m_definition->m_name == "Marine")
+	{
+		m_color = Rgba8(73, 188, 13);
+	}
+	if (m_definition->m_name == "Demon")
+	{
+		m_color = Rgba8(255,105,180);
+	}
+	
+	m_aiController = new AIController();
+
 }	
 Actor::~Actor()
 {
@@ -95,8 +113,61 @@ void Actor::TestPojectileInput(Vec3 movement)
 	m_position += movement * 100.;
 }
 
+void Actor::UpdatePhysics(float deltaSeconds)
+{
+	if (m_definition->m_physicsSimulated)
+	{
+		if (!m_isFlying)
+		{
+			m_velocity = Vec3(m_velocity.x,m_velocity.y,0.f);
+		}
+		m_velocity += m_definition->m_drag * (-m_velocity);
+
+		//integrate acceleration
+		// integrate velocity
+		// integrate position
+
+
+	}
+}
+
 void Actor::Damage(Actor* damager)
 {
 	m_health -= damager->m_owner->m_currentWeapon->m_definition->m_rayDamage;
 	m_aiController->DamagedBy(damager->m_owner);
+}
+
+void Actor::AddForce()
+{
+
+}
+
+void Actor::AddImpulse()
+{
+
+}
+
+void Actor::OnCollide()
+{
+
+}
+
+void Actor::OnPossessed()
+{
+	
+}
+
+void Actor::OnUnPossessed()
+{
+	m_controller = nullptr;
+}
+
+void Actor::MoveInDirection()
+{
+
+}
+
+void Actor::TurnInDirection()
+{
+
 }

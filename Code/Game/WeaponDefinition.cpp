@@ -1,12 +1,17 @@
 #include "Game/WeaponDefinition.hpp"
-
+#include "Engine/Core/ErrorWarningAssert.hpp"
 
 void WeaponDefinition::InitializeDefinitions(const char* path)
 {
 	XmlDocument document;
 	XmlResult result = document.LoadFile(path);
+	if (result != 0)
+	{
+		ERROR_AND_DIE("XML LOADING ERROR")
+	}
 	XmlElement* rootElement = document.RootElement();
 	XmlElement* weaponDefinitionElement = rootElement->FirstChildElement();
+
 	while (weaponDefinitionElement != nullptr)
 	{
 		std::string elementName = weaponDefinitionElement->Name();
@@ -40,18 +45,75 @@ bool WeaponDefinition::LoadFromXmlElement(const XmlElement& element)
 {
 
 	m_name 				=	 ParseXmlAttribute(element, "name", m_name);
-	m_refireTime		=	 ParseXmlAttribute(element, "name", m_refireTime);
-	m_rayCount			=	 ParseXmlAttribute(element, "name", m_rayCount);
-	m_rayCone			=	 ParseXmlAttribute(element, "name", m_rayCone);
-	m_rayRange			=	 ParseXmlAttribute(element, "name", m_rayRange);
-	m_rayDamage			=	 ParseXmlAttribute(element, "name", m_rayDamage);
-	m_rayImpulse		=	 ParseXmlAttribute(element, "name", m_rayImpulse);
-	m_HUDshader			=	 ParseXmlAttribute(element, "name", m_HUDshader);
-	m_baseTexture		=	 ParseXmlAttribute(element, "name", m_baseTexture);
-	m_reticleTexture	=	 ParseXmlAttribute(element, "name", m_reticleTexture);
-	m_reticleSize		=	 ParseXmlAttribute(element, "name", m_reticleSize);
-	m_spriteSize		=	 ParseXmlAttribute(element, "name", m_spriteSize);
-	m_spritePivot		=	 ParseXmlAttribute(element, "name", m_spritePivot);
+	m_refireTime		=	 ParseXmlAttribute(element, "refireTime", m_refireTime);
+	m_rayCount			=	 ParseXmlAttribute(element, "rayCount", m_rayCount);
+	m_rayCone			=	 ParseXmlAttribute(element, "rayCone", m_rayCone);
+	m_rayRange			=	 ParseXmlAttribute(element, "rayRange", m_rayRange);
+	m_rayDamage			=	 ParseXmlAttribute(element, "rayDamage", m_rayDamage);
+	m_rayImpulse		=	 ParseXmlAttribute(element, "rayImpulse", m_rayImpulse);
 
+	const XmlElement* childElement = element.FirstChildElement();
+	while (childElement != nullptr)
+	{
+		std::string childName = childElement->Name();
+
+		if (childName == "HUD")
+		{
+			m_HUDshader			= ParseXmlAttribute(*childElement, "shader", m_HUDshader);
+			m_baseTexture		= ParseXmlAttribute(*childElement, "baseTexture", m_baseTexture);
+			m_reticleTexture	= ParseXmlAttribute(*childElement, "reticleTexture", m_reticleTexture);
+			m_reticleSize		= ParseXmlAttribute(*childElement, "reticleSize", m_reticleSize);
+			m_spriteSize		= ParseXmlAttribute(*childElement, "spriteSize", m_spriteSize);
+			m_spritePivot		= ParseXmlAttribute(*childElement, "spritePivot", m_spritePivot);
+
+			const XmlElement* grandChildElement = childElement->FirstChildElement();
+			while (grandChildElement != nullptr)
+			{
+				std::string grandChildName = grandChildElement->Name();
+
+				if (grandChildName == "Animation")
+				{
+					animationDefinition newAnimation;
+
+					newAnimation.m_name				= ParseXmlAttribute(*grandChildElement, "name", "invalid");
+					newAnimation.m_shader			= ParseXmlAttribute(*grandChildElement, "shader", "invalid");
+					newAnimation.m_spritesheet		= ParseXmlAttribute(*grandChildElement, "spriteSheet", "invalid");
+					newAnimation.m_cellcount		= ParseXmlAttribute(*grandChildElement, "cellCount", Vec2(0, 0));
+					newAnimation.m_secondsPerFrame  = ParseXmlAttribute(*grandChildElement, "secondsPerFrame", 0.f);
+					newAnimation.m_startFrame		= ParseXmlAttribute(*grandChildElement, "startFrame", 0);
+					newAnimation.m_endFrame			= ParseXmlAttribute(*grandChildElement, "endFrame", 0);
+
+					m_animations.push_back(newAnimation);
+
+					grandChildElement = grandChildElement->NextSiblingElement();
+				}
+			}
+		}
+
+		
+
+		else if (childName == "Sounds")
+		{
+			const XmlElement* grandChildElement = childElement->FirstChildElement();
+			while (grandChildElement != nullptr)
+			{
+				std::string grandChildName = grandChildElement->Name();
+
+				if (grandChildName == "Sound")
+				{
+					std::string sound = "invalid";
+					std::string soundLocation = "invalid";
+					sound = ParseXmlAttribute(*grandChildElement, "sound", sound);
+					soundLocation = ParseXmlAttribute(*grandChildElement, "name", soundLocation);
+					std::string soundEntry = sound + "+" + soundLocation;
+					m_sounds.push_back(soundEntry);
+
+					grandChildElement = grandChildElement->NextSiblingElement();
+				}
+			}
+		}
+	
+		childElement = childElement->NextSiblingElement();
+	}
 	return true;
 }

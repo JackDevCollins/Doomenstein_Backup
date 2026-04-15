@@ -41,14 +41,45 @@ std::vector<MapDefinition*> MapDefinition::s_definitions;
 
 bool MapDefinition::LoadFromXmlElement(const XmlElement& element)
 {
-	m_name = ParseXmlAttribute(element, "name", m_name);
-	std::string imagePath = ParseXmlAttribute(element, "image", "Error");
-	m_image = new Image(imagePath.c_str());
-	std::string shaderPath = ParseXmlAttribute(element, "shader", "Error");
-	m_shader = g_engine->m_render->CreateOrGetShader(shaderPath.c_str(), VertexType::VERTEX_PCUTBN);
+	m_name						= ParseXmlAttribute(element, "name", m_name);
+	std::string imagePath		= ParseXmlAttribute(element, "image", "Error");
+	m_image						= new Image(imagePath.c_str());
+	std::string shaderPath		= ParseXmlAttribute(element, "shader", "Error");
+	m_shader					= g_engine->m_render->CreateOrGetShader(shaderPath.c_str(), VertexType::VERTEX_PCUTBN);
 	std::string spriteSheetPath = ParseXmlAttribute(element, "spriteSheetTexture", "Error");
-	m_spriteSheetTexture = g_engine->m_render->CreateOrGetTextureFromFile(spriteSheetPath.c_str());
-	m_spriteSheetCellCount = ParseXmlAttribute(element, "spriteSheetCellCount", m_spriteSheetCellCount);
+	m_spriteSheetTexture		= g_engine->m_render->CreateOrGetTextureFromFile(spriteSheetPath.c_str());
+	m_spriteSheetCellCount		= ParseXmlAttribute(element, "spriteSheetCellCount", m_spriteSheetCellCount);
+
+	const XmlElement* childElement = element.FirstChildElement();
+	while (childElement != nullptr)
+	{
+		std::string childName = childElement->Name();
+
+		if (childName == "SpawnInfos")
+		{
+			const XmlElement* grandChildElement = childElement->FirstChildElement();
+			while (grandChildElement != nullptr)
+			{
+				std::string grandChildName = grandChildElement->Name();
+
+				if (grandChildName == "SpawnInfo")
+				{
+					SpawnInfo* newSpawnInfo = new SpawnInfo;
+
+					newSpawnInfo->m_actorType	= ParseXmlAttribute(*grandChildElement, "actor", "INVALID");
+					newSpawnInfo->m_position	= ParseXmlAttribute(*grandChildElement, "position", Vec3(0, 0, 0));
+					newSpawnInfo->m_orientation = ParseXmlAttribute(*grandChildElement, "orientation", EulerAngles(0, 0, 0));
+
+					m_spawnInfos.push_back(newSpawnInfo);
+
+					grandChildElement = grandChildElement->NextSiblingElement();
+				}
+
+			}
+		}
+
+		childElement = childElement->NextSiblingElement();
+	}
 
 	return true;
 }

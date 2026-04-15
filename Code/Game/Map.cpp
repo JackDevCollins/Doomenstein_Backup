@@ -2,7 +2,7 @@
 #include "Game/MapDefinition.hpp"
 #include "Game/Actor.hpp"
 #include "Game/Game.hpp"
-#include "Game/Player.hpp"
+#include "Game/PlayerController.hpp"
 #include "Engine/Core/Engine.hpp"
 #include "Engine/Core/Vertex_PCUTBN.hpp"
 #include "Engine/Core/VertexUtils.hpp"
@@ -10,6 +10,7 @@
 #include "Engine/Core/Rgba8.hpp"
 #include "Engine/Renderer/IndexBuffer.hpp"
 #include "Engine/Math/MathUtils.hpp"
+#include "Engine/Core/ErrorWarningAssert.hpp"
 
 
 
@@ -21,11 +22,16 @@ Map::Map(Game* game, const MapDefinition* definition)
 	m_texture = definition->m_spriteSheetTexture;
 	m_shader = definition->m_shader;
 	m_terrain = new SpriteSheet(*m_texture, definition->m_spriteSheetCellCount);
+
 	CreateTiles();
 	CreateGeometry();
 	CreateBuffers();
 
-	CreateTestActors();
+	CreateStartupActors();
+
+	CreatePlayerActor();
+
+	//CreateTestActors();
 
 	g_engine->m_render->SetLightingConstants(Vec3(2,1,-1), .85f, .35f);
 }
@@ -269,7 +275,7 @@ void Map::CollideActorWithMap(Actor* actor)
 
 		if (!AreCoordsInBounds(testTiles[testNum]->m_bounds.m_mins.x, testTiles[testNum]->m_bounds.m_mins.y))
 		{
-			if (IsPointInsideDisc2D(XYTileBounds.GetNearestPoint(XYPosition), XYPosition, actor->m_physicsRadius));
+			if (IsPointInsideDisc2D(XYTileBounds.GetNearestPoint(XYPosition), XYPosition, actor->m_physicsRadius))
 			{
 				PushDiscOutOfFixedAABB2D(XYPosition, actor->m_physicsRadius, XYTileBounds);
 				actor->m_position = Vec3(XYPosition.x, XYPosition.y, actor->m_position.z);
@@ -277,7 +283,7 @@ void Map::CollideActorWithMap(Actor* actor)
 		}
 		if (testTiles[testNum]->m_tileDefinition->m_isSolid)
 		{
-			if (IsPointInsideDisc2D(XYTileBounds.GetNearestPoint(XYPosition),XYPosition, actor->m_physicsRadius));
+			if (IsPointInsideDisc2D(XYTileBounds.GetNearestPoint(XYPosition),XYPosition, actor->m_physicsRadius))
 			{
 				PushDiscOutOfFixedAABB2D(XYPosition, actor->m_physicsRadius, XYTileBounds);
 				actor->m_position = Vec3(XYPosition.x,XYPosition.y,actor->m_position.z);
@@ -321,36 +327,90 @@ void Map::CreateTestActors()
 
 	if (!m_game->m_player)
 	{
-		m_game->m_player = new Player(m_game);
+		m_game->m_player = new PlayerController();
 		m_game->m_player->m_position = Vec3(2.5f, 8.5f, 0.5f);
 	}
 
-	m_game->m_player->m_testProjectile = TestProjectile01;
+	//m_game->m_player->m_testProjectile = TestProjectile01;
+}
+
+void Map::CreateStartupActors()
+{
+	for (int actorIndex = 0; actorIndex < m_definition->m_spawnInfos.size(); ++actorIndex)
+	{
+		Actor* newActor = SpawnActor(*m_definition->m_spawnInfos[actorIndex]);
+		if (AddActorToMap(newActor))
+		{
+			ERROR_RECOVERABLE("ACTOR FAILED TO BE ADDED");
+		}
+	}
+}
+
+void Map::CreatePlayerActor()
+{
+	int randomSpawnPositionIndex = RollRandomIntInRange(0, m_spawnpoints.size() - 1);
+	ActorHandle* spawnPointActorHandle = &m_spawnpoints[randomSpawnPositionIndex];
+
+	SpawnInfo playerSpawnInfo;
+	playerSpawnInfo.m_actorType = "Marine";
+	playerSpawnInfo.m_position = GetActorByHandle(*spawnPointActorHandle)->m_position;
+	playerSpawnInfo.m_orientation = GetActorByHandle(*spawnPointActorHandle)->m_orientation;
+	playerSpawnInfo.m_velocity	= GetActorByHandle(*spawnPointActorHandle)->m_velocity;
+
+	Actor* newPlayer = SpawnActor(playerSpawnInfo);
+	if (AddActorToMap(newPlayer))
+	{
+		ERROR_RECOVERABLE("PLAYER ACTOR FAILED TO ADD");
+	}
+
+	if (m_game->m_player == nullptr)
+	{
+		m_game->m_player = new PlayerController();
+	}
+
+	m_game->m_player->Possess(newPlayer->m_handle);
+
 }
 
 Actor* Map::SpawnActor(const SpawnInfo& spawnInfo)
 {
-	Actor* newActor = new Actor(this, m_game, ActorDefinition::GetByName(spawnInfo.actorDef));
-	newActor->m_position = spawnInfo.position;
-	newActor->m_orientation = spawnInfo.orientation;
-	newActor->m_velocity = spawnInfo.velocity;
+	Actor* newActor = new Actor(this, m_game, ActorDefinition::GetByName(spawnInfo.m_actorType));
+	newActor->m_position = spawnInfo.m_position;
+	newActor->m_orientation = spawnInfo.m_orientation;
+	newActor->m_velocity = spawnInfo.m_velocity;
 
-	for (int index = 0; index < m_actors.size(); ++index)
-	{
-		if (m_actors[index] == nullptr)
-		{
-			newActor->m_handle = ActorHandle(m_nextActorUID, (unsigned int) index);
-			m_nextActorUID += 1;
-			break;
-		}
-	}
+	int indexForNewActor = m_actors.size();
+	
+	newActor->m_handle = ActorHandle(m_nextActorUID, (unsigned int) indexForNewActor);
+	m_nextActorUID += 1;
+	
 	return newActor;
+}
+
+bool Map::AddActorToMap(Actor* actor)
+{
+	int index = actor->m_handle.GetIndex();
+	m_actors.push_back(actor);
+
+	if (m_actors[index]->m_handle == actor->m_handle)
+	{
+		if (m_actors[index]->m_definition->m_name == "SpawnPoint")
+		{
+			m_spawnpoints.push_back(m_actors[index]->m_handle);
+		}
+
+		return false;
+
+
+	}
+	else
+		return true;
 }
 
 Actor* Map::GetActorByHandle(const ActorHandle handle) const
 {
 	int index = handle.GetIndex();
-	if (m_actors[index]->m_handle == handle)
+	if (m_actors[index]->m_handle.GetUID() == handle.GetUID())
 	{
 		return m_actors[index];
 	}
@@ -580,10 +640,10 @@ RaycastResult3D Map::RaycastWorldActors(const Vec3& start, const Vec3& direction
 	{	
 		Actor* actor = m_actors[index];
 		
-		if (IsPointInsideDisc2D(Vec2(start.x, start.y), Vec2(m_actors[index]->m_position.x, m_actors[index]->m_position.y), m_actors[index]->m_physicsRadius))
+		if (IsPointInsideDisc2D(Vec2(start.x, start.y), Vec2(actor->m_position.x, m_actors[index]->m_position.y), actor->m_physicsRadius))
 		{
-			float aTop = m_actors[index]->m_position.z + m_actors[index]->m_physicsHeight;
-			float aBottom = m_actors[index]->m_position.z;
+			float aTop = actor->m_position.z + actor->m_physicsHeight;
+			float aBottom = actor->m_position.z;
 			
 			if (start.z > aBottom && start.z < aTop)
 			{
@@ -598,9 +658,9 @@ RaycastResult3D Map::RaycastWorldActors(const Vec3& start, const Vec3& direction
 				return result;
 			}
 		}
-		Vec2 cylindercenterXY = Vec2(m_actors[index]->m_position.x, m_actors[index]->m_position.y);
+		Vec2 cylindercenterXY = Vec2(actor->m_position.x, actor->m_position.y);
 		float cylinderMinZ = m_actors[index]->m_position.z;
-		float cylinderMaxZ = cylinderMinZ + m_actors[index]->m_physicsHeight;
+		float cylinderMaxZ = cylinderMinZ + actor->m_physicsHeight;
 		RaycastResult3D cylinderRaycast = RaycastVsCylinderZ3D(start, direction, distance, cylindercenterXY, cylinderMinZ, cylinderMaxZ, m_actors[index]->m_physicsRadius);
 		if (cylinderRaycast.m_didImpact && cylinderRaycast.m_impactDistance < closestHit.m_impactDistance)
 		{

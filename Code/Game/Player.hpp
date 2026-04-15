@@ -1,4 +1,5 @@
 #pragma once
+#include "Game/Controller.hpp"
 #include "Engine/Math/Vec3.hpp"
 #include "Engine/Math/EulerAngles.hpp"
 #include "Engine/Core/Rgba8.hpp"
@@ -6,7 +7,7 @@
 class Game;
 class Actor;
 
-class Player 
+class Player
 {
 public:
 	Player(Game* owner);
@@ -20,12 +21,16 @@ public:
 	Mat44		GetModelToWorldTransform() const;
 
 public:
+
 	Game*		m_game = nullptr;
 	Vec3		m_position;
 	Vec3		m_velocity;
-	Rgba8		m_color = Rgba8::WHITE;
 	EulerAngles m_orientation;
-	EulerAngles m_angularVelocity;
+
+	bool		m_cameraMode	= false;
+
+
+	Rgba8		m_color = Rgba8::WHITE;
 	float		m_moveSpeed = 1.f;
 	float		m_rotationSpeed = 1.f;
 	float		m_mouseLookSens = 50.f;

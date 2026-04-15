@@ -9,6 +9,7 @@ public:
 
 	bool IsValid()const;
 	unsigned int GetIndex() const;
+	unsigned int GetUID() const;
 	bool operator==(const ActorHandle& other) const;
 	bool operator!=(const ActorHandle& other) const;
 

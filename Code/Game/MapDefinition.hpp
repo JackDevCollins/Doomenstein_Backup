@@ -12,14 +12,14 @@ class Shader;
 class Texture;
 struct IntVec2;
 
-class SpawnInfo
+struct SpawnInfo
 {
 public:
 
-	std::string  actorDef = "_";
-	Vec3		 position = Vec3(0, 0, 0);
-	EulerAngles	 orientation = EulerAngles(0, 0, 0);
-	Vec3		 velocity = Vec3(0, 0, 0);
+	std::string  m_actorType = "_";
+	Vec3		 m_position = Vec3(0, 0, 0);
+	EulerAngles	 m_orientation = EulerAngles(0, 0, 0);
+	Vec3		 m_velocity = Vec3(0, 0, 0);
 
 };
 
@@ -35,9 +35,10 @@ public:
 
 	bool	LoadFromXmlElement(const XmlElement& element);
 
-	std::string		m_name;
-	Image*			m_image;
-	Shader*			m_shader;
-	Texture*		m_spriteSheetTexture;
-	IntVec2			m_spriteSheetCellCount;
+	std::string							m_name;
+	Image*								m_image;
+	Shader*								m_shader;
+	Texture*							m_spriteSheetTexture;
+	IntVec2								m_spriteSheetCellCount;
+	std::vector<const SpawnInfo*>		m_spawnInfos;
 };

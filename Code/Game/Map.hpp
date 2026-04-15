@@ -13,6 +13,7 @@ class VertexBuffer;
 class IndexBuffer;
 struct Vertex_PCUTBN;
 struct RaycastResult3D;
+class PlayerController;
 
 class Map 
 {
@@ -39,9 +40,12 @@ public:
 	void CollideActorWithMap(Actor* actor);
 
 	void CreateTestActors();
-
+	void CreateStartupActors();
+	void CreatePlayerActor();
+	
 	void	DeleteDestroyedActors();
 	Actor*  SpawnActor(const SpawnInfo& spawnInfo);
+	bool	AddActorToMap(Actor* actor);
 	Actor*  GetActorByHandle(const ActorHandle handle) const;
 	Actor*  GetClosestVisibleEnemy();
 	void	DebugPossessNext();
@@ -73,4 +77,7 @@ public:
 	Vec3						m_sunDirection = Vec3(2,1,-1);
 	float						m_sunIntensity = 0.85f;
 	float						m_ambientIntensity = 0.35f;
+
+	std::vector<ActorHandle>	m_spawnpoints;
+
 };

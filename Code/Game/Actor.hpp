@@ -41,29 +41,34 @@ public:
 	virtual Mat44 GetModelToWorldTransform() const;
 
 public:
-	Game*					m_game = nullptr;
+	Game*					m_game				= nullptr;
 
 	ActorHandle				m_handle;
-	const ActorDefinition*	m_definition	= nullptr;
-	Map*					m_map			= nullptr;
-	Vec3					m_position;
-	EulerAngles				m_orientation;
-	Vec3					m_velocity;
-	Vec3					m_acceleration;
+	const ActorDefinition*	m_definition		= nullptr;
+	Map*					m_map				= nullptr;
+	Vec3					m_position			= Vec3(0,0,0);
+	EulerAngles				m_orientation		= EulerAngles(0,0,0);
+	Vec3					m_velocity			= Vec3(0,0,0);
+	Vec3					m_acceleration		= Vec3(0,0,0);
+	bool					m_isDead			= false;
+	bool					m_isGarbage			= false;
+	bool					m_isFlying			= false;
 	std::vector<Vertex>		m_verts;
 
+
+	// values that will get modified per instance, all other values get directly from def
 	std::vector<Weapon*>	m_inventory;
-	Weapon*					m_currentWeapon = nullptr;
-	Actor*					m_owner			 = nullptr;
-	float					m_corpseLifetime;
-	Timer*					m_decomposeTimer = nullptr;
-	float					m_health;
-	PlayerController*       m_controller	 = nullptr;
-	AIController*			m_aiController	 = nullptr;
-	Rgba8					m_color	= Rgba8::WHITE;
-	float					m_physicsHeight;
-	float					m_physicsRadius;
+	Weapon*					m_currentWeapon		= nullptr;
+	Actor*					m_owner				= nullptr;
+	float					m_corpseLifetime	= 1.f;	
+	Timer*					m_decomposeTimer	= nullptr;
+	float					m_health			= 100.f;
+	Controller*				m_controller		= nullptr;
+	AIController*			m_aiController		= nullptr;
+	Rgba8					m_color				= Rgba8::WHITE;
+	float					m_physicsHeight		= 1.f;
+	float					m_physicsRadius		= 1.f;
 	std::vector<Vertex>		m_physicsCylinder;
-	bool					m_isStatic;
+	bool					m_isStatic			= false;
 
 };
