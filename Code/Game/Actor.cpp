@@ -2,11 +2,13 @@
 #include "Game/Weapon.hpp"
 #include "Game/PlayerController.hpp"
 #include "Game/AIController.hpp"
+#include "Game/Controller.hpp"
 #include "Game/WeaponDefinition.hpp"
+#include "Game/Game.hpp"
+#include "Game/Map.hpp"
 #include "Engine/Math/Mat44.hpp"
 #include "Engine/Core/VertexUtils.hpp"
 #include "Engine/Core/Timer.hpp"
-#include "Game/Game.hpp"
 
 Actor::Actor(Game* owner, float physicsHeight, float physicsRadius, Vec3 position, Rgba8 color, bool isStatic)
 	:m_game(owner)
@@ -16,7 +18,6 @@ Actor::Actor(Game* owner, float physicsHeight, float physicsRadius, Vec3 positio
 	,m_color(color)
 	,m_isStatic(isStatic)
 {
-	m_orientation.m_pitchDegrees = 90.f;
 	/*AddVertsForCylinder3D(m_physicsCylinder, m_position, m_position + Vec3(0, 0, physicsHeight), m_physicsRadius, m_color);*/
 	
 }
@@ -65,6 +66,17 @@ void Actor::Update([[maybe_unused]]float deltaSeconds)
 {
 	m_physicsCylinder.clear();
 	AddVertsForMe();
+
+	if (m_controller != nullptr)
+	{
+		static_cast<PlayerController*>(m_controller)->UpdateInput();
+		static_cast<PlayerController*>(m_controller)->UpdateCamera();
+	}
+	else
+	{
+		m_aiController->Update();
+	}
+
 }
 
 void Actor::Render() const
@@ -154,12 +166,26 @@ void Actor::OnCollide()
 
 void Actor::OnPossessed()
 {
-	
+	for (int index = 0; index < m_map->m_actors.size(); ++index)
+	{
+		Actor* testActor = m_map->m_actors[index];
+
+		if (testActor->m_handle != this->m_handle)
+		{
+			if (testActor->m_controller != nullptr)
+			{
+				testActor->OnUnPossessed();
+			}
+		}
+	}
+	m_game->m_player->m_cameraMode = true;
 }
 
 void Actor::OnUnPossessed()
 {
 	m_controller = nullptr;
+
+	m_aiController->Possess(m_handle);
 }
 
 void Actor::MoveInDirection()

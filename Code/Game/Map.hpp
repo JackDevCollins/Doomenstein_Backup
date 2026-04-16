@@ -14,6 +14,7 @@ class IndexBuffer;
 struct Vertex_PCUTBN;
 struct RaycastResult3D;
 class PlayerController;
+class Camera;
 
 class Map 
 {
@@ -32,6 +33,8 @@ public:
 	bool IsPositionInBounds(const Vec3& position) const;
 	bool AreCoordsInBounds(int x, int y) const;
 	const Tile* GetTile(int x, int y) const;
+
+	void Startup();
 
 	void Update(float deltaSeconds);
 	void CollideActors();
@@ -70,6 +73,9 @@ public:
 	Shader*						m_shader = nullptr;
 	VertexBuffer*				m_vertexBuffer = nullptr;
 	IndexBuffer*				m_indexBuffer = nullptr;
+
+	Camera*						m_playerCamera = nullptr;
+
 
 	std::vector<Actor*>			m_actors;
 	unsigned int				m_nextActorUID = 0;

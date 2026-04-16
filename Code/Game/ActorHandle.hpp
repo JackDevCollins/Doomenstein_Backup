@@ -13,7 +13,7 @@ public:
 	bool operator==(const ActorHandle& other) const;
 	bool operator!=(const ActorHandle& other) const;
 
-	static const ActorHandle INVALID;
+	static const ActorHandle  INVALID;
 	static const unsigned int MAX_ACTOR_UID = 0x0000fffeu;
 	static const unsigned int MAX_ACTOR_INDEX = 0x0000ffffu;
 

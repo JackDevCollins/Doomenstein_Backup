@@ -15,10 +15,13 @@ public:
 	EulerAngles		m_orientation;
 	bool			m_cameraMode = false;	// true = fps // false = free-fly //
 
+/*	void		Possess(ActorHandle HauntingActor) override;*/
+
 	void		UpdateInput();
 	void		UpdateCamera();
 
-	bool		FreeFlyInput(float deltaSeconds);
+	bool		FreeFlyInput();
+	bool		ActorInput();
 
 	Mat44		GetModelToWorldTransform() const;
 

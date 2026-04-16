@@ -54,12 +54,11 @@ public:
 	
 	App*				m_app;
 	
-	Camera*				m_playerCamera = nullptr;
 	Camera*				m_screenCamera = nullptr;
 	PlayerController*	m_player = nullptr;
 	
 	//-----------------------------------------------------------------------------------------------
-	Map*				m_currentMap;
+	Map*				m_currentMap = nullptr;
 
 
 

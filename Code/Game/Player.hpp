@@ -17,7 +17,7 @@ public:
 	void Render() const;
 	void DebugRender() const;
 
-	bool		UpdateFromInput(float deltaSeconds);
+	//bool		UpdateFromInput(float deltaSeconds);
 	Mat44		GetModelToWorldTransform() const;
 
 public:

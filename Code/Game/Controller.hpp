@@ -1,4 +1,5 @@
 #pragma once
+#include "Game/ActorHandle.hpp"
 
 struct ActorHandle;
 class Map;
@@ -7,10 +8,12 @@ class Actor;
 class Controller
 {
 public:
-	ActorHandle*	m_actorHandle = nullptr;
+	Controller() = default;
+
+	ActorHandle		m_actorHandle = ActorHandle::INVALID;
 	Map*			m_map		  = nullptr;
 
-	void		Possess(ActorHandle HauntingActor);
-	Actor*		GetActor();
+	virtual void		Possess(ActorHandle HauntingActor);
+	Actor*			    GetActor();
 
 };

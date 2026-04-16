@@ -11,6 +11,7 @@
 #include "Engine/Renderer/IndexBuffer.hpp"
 #include "Engine/Math/MathUtils.hpp"
 #include "Engine/Core/ErrorWarningAssert.hpp"
+#include "Engine/Renderer/Camera.hpp"
 
 
 
@@ -27,13 +28,12 @@ Map::Map(Game* game, const MapDefinition* definition)
 	CreateGeometry();
 	CreateBuffers();
 
-	CreateStartupActors();
-
-	CreatePlayerActor();
-
-	//CreateTestActors();
-
 	g_engine->m_render->SetLightingConstants(Vec3(2,1,-1), .85f, .35f);
+
+	m_playerCamera = new Camera();
+	m_playerCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
+
+	//Startup();	// startup called by game so it creates a map reference
 }
 
 Map::~Map()	// #ToDo need to figure out what to release / delete
@@ -165,6 +165,15 @@ const Tile* Map::GetTile(int x, int y) const
 	return &m_tiles[index];
 }
 
+void Map::Startup()
+{
+	CreateStartupActors();
+
+	CreatePlayerActor();
+
+	//CreateTestActors();
+}
+
 void Map::Update(float deltaSeconds)
 {
 	m_sunIntensity = GetClampedZeroToOne(m_sunIntensity);
@@ -173,6 +182,10 @@ void Map::Update(float deltaSeconds)
 
 	CollideActors();
 	CollideActorsWithMap();
+
+// 	m_game->m_player->UpdateInput();
+// 	m_game->m_player->UpdateCamera();
+	
 
 	for (int index = 0; index < m_actors.size(); ++index)
 	{
@@ -329,6 +342,7 @@ void Map::CreateTestActors()
 	{
 		m_game->m_player = new PlayerController();
 		m_game->m_player->m_position = Vec3(2.5f, 8.5f, 0.5f);
+		m_game->m_player->m_camera = m_playerCamera;
 	}
 
 	//m_game->m_player->m_testProjectile = TestProjectile01;
@@ -365,7 +379,7 @@ void Map::CreatePlayerActor()
 
 	if (m_game->m_player == nullptr)
 	{
-		m_game->m_player = new PlayerController();
+		m_game->m_player = new PlayerController() ;
 	}
 
 	m_game->m_player->Possess(newPlayer->m_handle);

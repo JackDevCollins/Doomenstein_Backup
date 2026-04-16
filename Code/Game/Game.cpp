@@ -36,7 +36,7 @@
 Game::Game(App* owner)
 	: m_app(owner)
 {
-	m_playerCamera = new Camera();
+	
 	m_screenCamera = new Camera();
 
 	m_gameClock = new Clock(*g_systemClock);
@@ -44,7 +44,7 @@ Game::Game(App* owner)
 	m_gameTimer01 = new Timer(.01, m_gameClock);
 	m_gameTimer01->Start();
 
-	m_playerCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
+	
 	//m_screenCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
 	
 	
@@ -119,7 +119,7 @@ void Game::Render() const
 
 	if (m_currentGameState == GameState::GAMESTATE_GAME)
 	{
-		g_engine->m_render->BeginCamera(*m_playerCamera);
+		g_engine->m_render->BeginCamera(*m_currentMap->m_playerCamera);
 
 		m_currentMap->Render();
 
@@ -129,9 +129,9 @@ void Game::Render() const
 
 		RenderText();
 
-		DebugRenderWorld(*m_playerCamera);
+		DebugRenderWorld(*m_currentMap->m_playerCamera);
 	
-		g_engine->m_render->EndCamera(*m_playerCamera);
+		g_engine->m_render->EndCamera(*m_currentMap->m_playerCamera);
 	}
 
 	//	For UI elements
@@ -218,6 +218,14 @@ void Game::CheckInputs()
 	{
 		g_engine->m_devConsole->ToggleOpen();
 	}
+	if (m_player != nullptr)
+	{
+		if (g_engine->m_input->WasKeyJustPressed('F'))		// toggle possession camera
+		{
+			m_player->m_cameraMode = !m_player->m_cameraMode;
+		}
+	}
+	
 
 
 	///////// Lighting Controls /////////
@@ -389,13 +397,13 @@ void Game::UpdateCameras([[maybe_unused]]float deltaSeconds)
 	m_screenCamera->SetOrthoView(Vec2(0.f, 0.f), clientDimentions);
 
 	float tempAspect = g_engine->m_window->m_config.m_clientAspect;										// #ToDo my client aspect from config (16/10) does not give the desired results. 2 does
-	m_playerCamera->SetPerspectiveView(tempAspect, 60.f, 0.1f, 100.0f);
-	
-	if (m_player)
-	{
-		m_playerCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation);
-		m_playerCamera->SetCameraToRenderTransform(m_playerCamera->GetCameraToRenderTransform());
-	}
+// 	m_playerCamera->SetPerspectiveView(tempAspect, 60.f, 0.1f, 100.0f);
+// 	
+// 	if (m_player)
+// 	{
+// 		m_playerCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation);
+// 		m_playerCamera->SetCameraToRenderTransform(m_playerCamera->GetCameraToRenderTransform());
+// 	}
 	
 }
 
@@ -408,6 +416,7 @@ void Game::EnterState(GameState state)	// state is what you are entering
 		{
 			std::string mapToLoad = g_globalConfigBlackboard.GetValue("defaultMap", "defaultMap");
 			m_currentMap = new Map(this, MapDefinition::GetByName(mapToLoad));
+			m_currentMap->Startup();
 		}
 
 		if (m_player == nullptr)
