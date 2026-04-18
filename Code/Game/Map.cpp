@@ -262,7 +262,7 @@ void Map::CollideActorsWithMap()
 void Map::CollideActorWithMap(Actor* actor)
 {
 	IntVec2 tileCoordsActorOccupies			= IntVec2(RoundDownToInt(actor->m_position.x),RoundDownToInt(actor->m_position.y));
-	const Tile*	tileObjectActorOccupies		= GetTile(tileCoordsActorOccupies.x,tileCoordsActorOccupies.y);
+	//const Tile*	tileObjectActorOccupies		= GetTile(tileCoordsActorOccupies.x,tileCoordsActorOccupies.y);
 	IntVec2 positionNorth	  = tileCoordsActorOccupies + IntVec2(0, 1);
 	IntVec2 positionEast	  = tileCoordsActorOccupies + IntVec2(1, 0);
 	IntVec2 positionSouth	  = tileCoordsActorOccupies + IntVec2(0, -1);
@@ -286,7 +286,7 @@ void Map::CollideActorWithMap(Actor* actor)
 		AABB2 XYTileBounds = AABB2(Vec2(testTiles[testNum]->m_bounds.m_mins.x, testTiles[testNum]->m_bounds.m_mins.y),Vec2(testTiles[testNum]->m_bounds.m_maxs.x, testTiles[testNum]->m_bounds.m_maxs.y));
 		Vec2 XYPosition = Vec2(actor->m_position.x,actor->m_position.y);
 
-		if (!AreCoordsInBounds(testTiles[testNum]->m_bounds.m_mins.x, testTiles[testNum]->m_bounds.m_mins.y))
+		if (!AreCoordsInBounds(RoundDownToInt( testTiles[testNum]->m_bounds.m_mins.x) ,RoundDownToInt(testTiles[testNum]->m_bounds.m_mins.y) ))
 		{
 			if (IsPointInsideDisc2D(XYTileBounds.GetNearestPoint(XYPosition), XYPosition, actor->m_physicsRadius))
 			{
@@ -362,7 +362,7 @@ void Map::CreateStartupActors()
 
 void Map::CreatePlayerActor()
 {
-	int randomSpawnPositionIndex = RollRandomIntInRange(0, m_spawnpoints.size() - 1);
+	int randomSpawnPositionIndex = RollRandomIntInRange(0, (int)m_spawnpoints.size() - 1);
 	ActorHandle* spawnPointActorHandle = &m_spawnpoints[randomSpawnPositionIndex];
 
 	SpawnInfo playerSpawnInfo;
@@ -393,7 +393,7 @@ Actor* Map::SpawnActor(const SpawnInfo& spawnInfo)
 	newActor->m_orientation = spawnInfo.m_orientation;
 	newActor->m_velocity = spawnInfo.m_velocity;
 
-	int indexForNewActor = m_actors.size();
+	int indexForNewActor =(int) m_actors.size();
 	
 	newActor->m_handle = ActorHandle(m_nextActorUID, (unsigned int) indexForNewActor);
 	m_nextActorUID += 1;

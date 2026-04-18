@@ -9,6 +9,7 @@
 #include "Engine/Math/Mat44.hpp"
 #include "Engine/Core/VertexUtils.hpp"
 #include "Engine/Core/Timer.hpp"
+#include "Engine/Renderer/Camera.hpp"
 
 Actor::Actor(Game* owner, float physicsHeight, float physicsRadius, Vec3 position, Rgba8 color, bool isStatic)
 	:m_game(owner)
@@ -53,7 +54,7 @@ Actor::Actor(Map* map, Game* game, const ActorDefinition* actorDef)
 	{
 		m_color = Rgba8(255,105,180);
 	}
-	
+	AddVertsForMe();
 	m_aiController = new AIController();
 
 }	
@@ -64,50 +65,69 @@ Actor::~Actor()
 
 void Actor::Update([[maybe_unused]]float deltaSeconds)		
 {
-	m_physicsCylinder.clear();
-	AddVertsForMe();
 
 	if (m_controller != nullptr)
 	{
 		static_cast<PlayerController*>(m_controller)->UpdateInput();
 		static_cast<PlayerController*>(m_controller)->UpdateCamera();
+
+	
 	}
 	else
 	{
 		m_aiController->Update();
 	}
 
+	UpdatePhysics(deltaSeconds);
+
 }
 
 void Actor::Render() const
 {
-	if (m_controller == nullptr)
-	{
+	if(!m_definition->m_isVisible) return;
+// 	if (m_controller != nullptr)	// change back after testing
+// 	{
 		g_engine->m_render->BindTexture(nullptr);
 		g_engine->m_render->BindShader(nullptr);
 		g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
 		g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
 		g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
-		g_engine->m_render->SetModelConstants(Mat44(), m_color);
+		g_engine->m_render->SetModelConstants(/*m_orientation.GetAsMatrix_IFwd_JLeft_KUp()*/GetModelToWorldTransform(), m_color);
 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+		
 
 		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);;
-		g_engine->m_render->SetModelConstants(Mat44(), Rgba8(m_color.r + 10.f, m_color.g + 10.f, m_color.b + 10.f)); //Rgba8((m_color.r / (unsigned char)1.5), (m_color.g / (unsigned char)1.5), (m_color.b / (unsigned char)1.5)));
+		g_engine->m_render->SetModelConstants(/*m_orientation.GetAsMatrix_IFwd_JLeft_KUp()*/GetModelToWorldTransform(), Rgba8(m_color.r + 10, m_color.g + 10, m_color.b + 10)); //Rgba8((m_color.r / (unsigned char)1.5), (m_color.g / (unsigned char)1.5), (m_color.b / (unsigned char)1.5)));
 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+		
 
-	}
+	//}
 }
 
 void Actor::AddVertsForMe()
 {
-	m_orientation.m_pitchDegrees = 90.f;
-	//AddVertsForCylinder3D(m_physicsCylinder, m_position, Vec3(m_position.x , m_position.y, m_position.z + m_physicsHeight), m_physicsRadius, m_color);
-	AddVertsForZCylinder3D(m_physicsCylinder, m_position, m_physicsHeight, m_physicsRadius, m_color);
+	if (m_definition->m_isVisible)
+	{
+		AddVertsForZCylinder3D(m_physicsCylinder, Vec3(0,0,0) , m_physicsHeight, m_physicsRadius, m_color);
+		if (m_definition->m_name == "Marine" || m_definition->m_name == "Demon")	// change back after testing
+		{
+		Vec3 test = Vec3(0, 0, m_definition->m_cameraEyeHeight);
+ 		AddVertsForCone3D(m_physicsCylinder, test + (Vec3(1,0,0) * m_physicsRadius), test + (Vec3(1,0,0) * .5), .125);
+		//AddVertsForArrow3D(m_physicsCylinder, test, test + (Vec3( 0,m_orientation.GetForwardDir_IFwd_JLeft_KUp().z,0)  * 1), .0125);
+			
+		}
+
+	}
 }
 
 void Actor::Attack()
 {	
 	m_currentWeapon->Fire();
+}
+
+void Actor::EquipWeapon()
+{
+
 }
 
 Mat44 Actor::GetModelToWorldTransform() const
@@ -127,18 +147,46 @@ void Actor::TestPojectileInput(Vec3 movement)
 
 void Actor::UpdatePhysics(float deltaSeconds)
 {
+	//m_velocity += this->getForwardNormal() * PLAYER_SHIP_ACCELERATION * m_thrustFraction * deltaSeconds;
 	if (m_definition->m_physicsSimulated)
 	{
+		
+		m_velocity += (m_acceleration * deltaSeconds);
+		
+
 		if (!m_isFlying)
 		{
 			m_velocity = Vec3(m_velocity.x,m_velocity.y,0.f);
 		}
-		m_velocity += m_definition->m_drag * (-m_velocity);
 
-		//integrate acceleration
-		// integrate velocity
-		// integrate position
+		//m_velocity += m_definition->m_drag * (-m_velocity);
+		float dragMultiplier = 1.0f - (m_definition->m_drag * deltaSeconds);
+		if (dragMultiplier < 0.f)
+		{
+			dragMultiplier = 0.f;
+		}
 
+		m_velocity *= dragMultiplier;
+		
+		float currentSpeed = m_velocity.GetLength();
+		float maxSpeed = 0.f;
+		if (m_isRunning)
+		{
+			maxSpeed = m_definition->m_runSpeed;
+		}
+		else
+		{
+			maxSpeed = m_definition->m_walkSpeed;
+		}
+
+		if (currentSpeed > maxSpeed)
+		{
+			m_velocity = m_velocity.GetNormalized() * maxSpeed;
+		}
+
+
+		m_position += m_velocity * deltaSeconds;
+		m_acceleration = Vec3(0,0,0);
 
 	}
 }
@@ -149,14 +197,14 @@ void Actor::Damage(Actor* damager)
 	m_aiController->DamagedBy(damager->m_owner);
 }
 
-void Actor::AddForce()
+void Actor::AddForce(Vec3 force)
 {
-
+	m_acceleration = (force);
 }
 
-void Actor::AddImpulse()
+void Actor::AddImpulse(Vec3 impulse)
 {
-
+	m_velocity += impulse;
 }
 
 void Actor::OnCollide()

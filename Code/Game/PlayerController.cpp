@@ -7,21 +7,6 @@
 #include "Engine/Core/Engine.hpp"
 #include "Engine/Renderer/Camera.hpp"
 
-// void Controller::Possess(ActorHandle HauntingActor)
-// {
-// 	if (m_map == nullptr)
-// 	{
-// 		m_map = g_app->m_game->m_currentMap;
-// 	}
-// 
-// 	m_actorHandle = &HauntingActor;
-// 
-// 	GetActor()->m_controller = this;
-// 
-// 	// get index from actorHandle and possess the next in the list. activate
-// 	// AI controller restoration
-// }
-
 void PlayerController::UpdateInput()
 {
 	if (!m_cameraMode)	// if in fps mode
@@ -49,16 +34,18 @@ void PlayerController::UpdateCamera()
 		if (!GetActor()->m_isDead)
 		{
 			Vec3 actorPosition = GetActor()->m_position;
-			Vec3 Newposition = Vec3(actorPosition.x, actorPosition.y, GetActor()->m_definition->m_cameraEyeHeight);
-			m_camera->SetPositionAndOrientation(Newposition, EulerAngles(GetActor()->m_orientation.m_yawDegrees, GetActor()->m_orientation.m_pitchDegrees, 0));
-
+			Vec3 CameraPosition = Vec3(actorPosition.x, actorPosition.y, GetActor()->m_definition->m_cameraEyeHeight);
+			m_camera->SetPosition(CameraPosition);
+			m_camera->SetOrientation(GetActor()->m_orientation);
+			//m_camera->SetPositionAndOrientation(Newposition, EulerAngles(GetActor()->m_orientation.m_yawDegrees, GetActor()->m_orientation.m_pitchDegrees, 0));
+			//m_camera->SetOrientation(EulerAngles(GetActor()->m_orientation.m_yawDegrees, m_orientation.m_pitchDegrees, 0));
 		}
 	}
 }
 
 bool PlayerController::FreeFlyInput()
 {
-	float deltaSeconds = g_systemClock->GetDeltaSeconds();
+	float deltaSeconds = (float)g_systemClock->GetDeltaSeconds();
 
 	// get controller
 	const XboxController& controller = g_engine->m_input->GetController(0);
@@ -68,8 +55,8 @@ bool PlayerController::FreeFlyInput()
 
 	if (g_engine->m_input->m_cursorState.m_cursorClientDelta != Vec2(0.f, 0.f))
 	{
-		GetActor()->m_orientation.m_yawDegrees = m_orientation.GetForwardDir_IFwd_JLeft_KUp().GetOrientationAboutZDegrees() + (g_engine->m_input->m_cursorState.m_cursorClientDelta.x * 0.075f);
-		GetActor()->m_orientation.m_pitchDegrees = m_orientation.m_pitchDegrees - (g_engine->m_input->m_cursorState.m_cursorClientDelta.y * 0.075f);
+		m_orientation.m_yawDegrees	 = m_orientation.GetForwardDir_IFwd_JLeft_KUp().GetOrientationAboutZDegrees() + (g_engine->m_input->m_cursorState.m_cursorClientDelta.x * 0.075f);
+		m_orientation.m_pitchDegrees = m_orientation.m_pitchDegrees - (g_engine->m_input->m_cursorState.m_cursorClientDelta.y * 0.075f);
 
 		if (m_orientation.m_pitchDegrees > 90.f)  m_orientation.m_pitchDegrees = 89.9f;
 		if (m_orientation.m_pitchDegrees < -90.f) m_orientation.m_pitchDegrees = -89.9f;
@@ -143,7 +130,6 @@ bool PlayerController::FreeFlyInput()
 
 bool PlayerController::ActorInput()
 {
-	float deltaSeconds = g_systemClock->GetDeltaSeconds();
 
 	// get controller
 	const XboxController& controller = g_engine->m_input->GetController(0);
@@ -152,12 +138,16 @@ bool PlayerController::ActorInput()
 
 
 	if (g_engine->m_input->m_cursorState.m_cursorClientDelta != Vec2(0.f, 0.f))
-	{
-		GetActor()->m_orientation.m_yawDegrees = m_orientation.GetForwardDir_IFwd_JLeft_KUp().GetOrientationAboutZDegrees() + (g_engine->m_input->m_cursorState.m_cursorClientDelta.x * 0.075f);
-		GetActor()->m_orientation.m_pitchDegrees = m_orientation.m_pitchDegrees - (g_engine->m_input->m_cursorState.m_cursorClientDelta.y * 0.075f);
+	{	
+		GetActor()->m_orientation.m_yawDegrees = GetActor()->m_orientation.m_yawDegrees + (g_engine->m_input->m_cursorState.m_cursorClientDelta.x * 0.075f);
+		
+		GetActor()->m_orientation.m_pitchDegrees = GetActor()->m_orientation.m_pitchDegrees - (g_engine->m_input->m_cursorState.m_cursorClientDelta.y * 0.075f);
+		if (GetActor()->m_orientation.m_pitchDegrees > 90.f)  GetActor()->m_orientation.m_pitchDegrees = 89.9f;
+		if (GetActor()->m_orientation.m_pitchDegrees < -90.f) GetActor()->m_orientation.m_pitchDegrees = -89.9f;
 
-		if (m_orientation.m_pitchDegrees > 90.f)  m_orientation.m_pitchDegrees = 89.9f;
-		if (m_orientation.m_pitchDegrees < -90.f) m_orientation.m_pitchDegrees = -89.9f;
+		m_orientation = GetActor()->m_orientation;
+		
+	
 	}
 
 	if (g_engine->m_input->WasKeyJustPressed('P'))		// Pause the game
@@ -166,37 +156,33 @@ bool PlayerController::ActorInput()
 		m_map->m_game->m_gameClock->TogglePause();
 	}
 
-
+	Vec3 forward = GetActor()->m_orientation.GetForwardDir_IFwd_JLeft_KUp();
+	forward.z = 0.f;
+	forward = forward.GetNormalized();
+	Vec3 left = forward.GetRotatedAboutZDegrees(90.f);
 
 	while (g_engine->m_input->IsKeyDown('A'))		// translate positive J							
 	{
-		Vec3 forward = m_orientation.GetForwardDir_IFwd_JLeft_KUp();
-		forward.z = 0.f;
-		forward.GetNormalized();
-		GetActor()->m_position += forward.GetRotatedAboutZDegrees(90).GetNormalized() * m_moveSpeed * deltaSeconds;
-		//m_position += m_orientation.GetForwardDir_IFwd_JLeft_KUp().GetRotatedAboutZDegrees(90).GetNormalized() * m_moveSpeed * deltaSeconds;
+		GetActor()->AddForce(left);
 		break;
 	}
 
 	while (g_engine->m_input->IsKeyDown('D'))		// translate negative J
 	{
-		Vec3 forward = m_orientation.GetForwardDir_IFwd_JLeft_KUp();
-		forward.z = 0.f;
-		forward.GetNormalized();
-		GetActor()->m_position -= forward.GetRotatedAboutZDegrees(90).GetNormalized() * m_moveSpeed * deltaSeconds;
-		//m_position -= m_orientation.GetForwardDir_IFwd_JLeft_KUp().GetRotatedAboutZDegrees(90).GetNormalized() * m_moveSpeed * deltaSeconds;
+		GetActor()->AddForce(-left);
 		break;
 	}
 
 	while (g_engine->m_input->IsKeyDown('W'))		// translate positive I
 	{
-		GetActor()->m_position += m_orientation.GetForwardDir_IFwd_JLeft_KUp() * m_moveSpeed * deltaSeconds;
+
+		GetActor()->AddForce(GetActor()->m_orientation.GetForwardDir_KBwd_JLeft_Iup().GetNormalized());
 		break;
 	}
 
 	while (g_engine->m_input->IsKeyDown('S'))		// translate negative I
 	{
-		GetActor()->m_position -= m_orientation.GetForwardDir_IFwd_JLeft_KUp() * m_moveSpeed * deltaSeconds;
+		GetActor()->AddForce(-GetActor()->m_orientation.GetForwardDir_KBwd_JLeft_Iup().GetNormalized());
 		break;
 	}
 
@@ -208,8 +194,6 @@ bool PlayerController::ActorInput()
 	{
 		m_moveSpeed = 10.f;
 	}
-
-
 
 	return 1;
 }

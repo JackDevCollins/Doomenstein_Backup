@@ -375,7 +375,7 @@ void Game::RenderText() const
 
 	BitmapFont& font = *g_defaultFont;
 
-	font.AddVertsForText3DAtOriginXForward(textVerts, 1.f, "Dickbutt");
+	font.AddVertsForText3DAtOriginXForward(textVerts, 1.f, "butt");
 
 
 	g_engine->m_render->BindTexture(&font.GetTexture());
@@ -396,14 +396,14 @@ void Game::UpdateCameras([[maybe_unused]]float deltaSeconds)
 	Vec2 clientDimentions = Vec2(static_cast<float>(g_engine->m_window->GetClientDimensions().x), static_cast<float>(g_engine->m_window->GetClientDimensions().y));
 	m_screenCamera->SetOrthoView(Vec2(0.f, 0.f), clientDimentions);
 
-	float tempAspect = g_engine->m_window->m_config.m_clientAspect;										// #ToDo my client aspect from config (16/10) does not give the desired results. 2 does
-// 	m_playerCamera->SetPerspectiveView(tempAspect, 60.f, 0.1f, 100.0f);
-// 	
-// 	if (m_player)
-// 	{
-// 		m_playerCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation);
-// 		m_playerCamera->SetCameraToRenderTransform(m_playerCamera->GetCameraToRenderTransform());
-// 	}
+// 	float tempAspect = g_engine->m_window->m_config.m_clientAspect;										// #ToDo my client aspect from config (16/10) does not give the desired results. 2 does
+//  	m_playerCamera->SetPerspectiveView(tempAspect, 60.f, 0.1f, 100.0f);
+//  	
+//  	if (m_player)
+//  	{
+//  		m_playerCamera->SetPositionAndOrientation(m_player->m_position, m_player->m_orientation);
+//  		m_playerCamera->SetCameraToRenderTransform(m_playerCamera->GetCameraToRenderTransform());
+//  	}
 	
 }
 

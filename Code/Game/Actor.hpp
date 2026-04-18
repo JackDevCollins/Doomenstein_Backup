@@ -28,8 +28,8 @@ public:
 
 	void	UpdatePhysics(float deltaSeconds);
 	void	Damage(Actor* damager);
-	void	AddForce();
-	void	AddImpulse();
+	void	AddForce(Vec3 force);
+	void	AddImpulse(Vec3 impulse);
 	void	OnCollide();
 	void	OnPossessed();
 	void	OnUnPossessed();
@@ -70,5 +70,5 @@ public:
 	float					m_physicsRadius		= 1.f;
 	std::vector<Vertex>		m_physicsCylinder;
 	bool					m_isStatic			= false;
-
+	bool					m_isRunning			= false;
 };

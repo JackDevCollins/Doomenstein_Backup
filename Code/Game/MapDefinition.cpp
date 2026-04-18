@@ -2,11 +2,16 @@
 #include "Engine/Renderer/Image.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Core/Engine.hpp"
+#include "Engine/Core/ErrorWarningAssert.hpp"
 
 void MapDefinition::InitializeDefinitions(const char* path)
 {
 	XmlDocument document;
 	XmlResult result = document.LoadFile(path);
+	if (result != 0)
+	{
+		ERROR_AND_DIE("XML LOADING ERROR")
+	}
 	XmlElement* rootElement = document.RootElement();
 	XmlElement* mapDefinitionElement = rootElement->FirstChildElement();
 	while (mapDefinitionElement != nullptr)
