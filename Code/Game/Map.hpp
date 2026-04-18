@@ -74,7 +74,6 @@ public:
 	VertexBuffer*				m_vertexBuffer = nullptr;
 	IndexBuffer*				m_indexBuffer = nullptr;
 
-	Camera*						m_playerCamera = nullptr;
 
 
 	std::vector<Actor*>			m_actors;

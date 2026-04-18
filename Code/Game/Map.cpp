@@ -30,8 +30,7 @@ Map::Map(Game* game, const MapDefinition* definition)
 
 	g_engine->m_render->SetLightingConstants(Vec3(2,1,-1), .85f, .35f);
 
-	m_playerCamera = new Camera();
-	m_playerCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
+
 
 	//Startup();	// startup called by game so it creates a map reference
 }
@@ -342,7 +341,6 @@ void Map::CreateTestActors()
 	{
 		m_game->m_player = new PlayerController();
 		m_game->m_player->m_position = Vec3(2.5f, 8.5f, 0.5f);
-		m_game->m_player->m_camera = m_playerCamera;
 	}
 
 	//m_game->m_player->m_testProjectile = TestProjectile01;

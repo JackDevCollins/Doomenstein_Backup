@@ -9,7 +9,10 @@ struct Mat44;
 class PlayerController : public Controller 
 {
 public:
-	
+	PlayerController();
+	virtual ~PlayerController();
+
+
 	Camera*			m_camera	= nullptr;
 	Vec3			m_position;
 	EulerAngles		m_orientation;
@@ -20,13 +23,10 @@ public:
 	void		UpdateInput();
 	void		UpdateCamera();
 
-	bool		FreeFlyInput();
-	bool		ActorInput();
+	void		ToggleCameraMode();
+
+	void		FreeFlyInput();
+	void		ActorInput();
 
 	Mat44		GetModelToWorldTransform() const;
-
-
-	float		m_rotationSpeed = 90.f;
-	float		m_moveSpeed = 10.f;
-	
 };

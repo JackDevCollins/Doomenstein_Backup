@@ -39,6 +39,7 @@ public:
 	void	EquipWeapon();
 
 	virtual Mat44 GetModelToWorldTransform() const;
+	Mat44	GetModelToWorldTransformYawOnly() const;
 
 public:
 	Game*					m_game				= nullptr;

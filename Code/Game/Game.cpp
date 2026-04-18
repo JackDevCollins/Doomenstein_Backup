@@ -119,7 +119,7 @@ void Game::Render() const
 
 	if (m_currentGameState == GameState::GAMESTATE_GAME)
 	{
-		g_engine->m_render->BeginCamera(*m_currentMap->m_playerCamera);
+		g_engine->m_render->BeginCamera(*m_player->m_camera);
 
 		m_currentMap->Render();
 
@@ -129,9 +129,9 @@ void Game::Render() const
 
 		RenderText();
 
-		DebugRenderWorld(*m_currentMap->m_playerCamera);
+		DebugRenderWorld(*m_player->m_camera);
 	
-		g_engine->m_render->EndCamera(*m_currentMap->m_playerCamera);
+		g_engine->m_render->EndCamera(*m_player->m_camera);
 	}
 
 	//	For UI elements
@@ -222,7 +222,7 @@ void Game::CheckInputs()
 	{
 		if (g_engine->m_input->WasKeyJustPressed('F'))		// toggle possession camera
 		{
-			m_player->m_cameraMode = !m_player->m_cameraMode;
+			m_player->ToggleCameraMode();
 		}
 	}
 	

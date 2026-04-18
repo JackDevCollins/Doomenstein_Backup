@@ -65,13 +65,10 @@ Actor::~Actor()
 
 void Actor::Update([[maybe_unused]]float deltaSeconds)		
 {
-
 	if (m_controller != nullptr)
 	{
 		static_cast<PlayerController*>(m_controller)->UpdateInput();
 		static_cast<PlayerController*>(m_controller)->UpdateCamera();
-
-	
 	}
 	else
 	{
@@ -79,7 +76,6 @@ void Actor::Update([[maybe_unused]]float deltaSeconds)
 	}
 
 	UpdatePhysics(deltaSeconds);
-
 }
 
 void Actor::Render() const
@@ -92,15 +88,13 @@ void Actor::Render() const
 		g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
 		g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
 		g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
-		g_engine->m_render->SetModelConstants(/*m_orientation.GetAsMatrix_IFwd_JLeft_KUp()*/GetModelToWorldTransform(), m_color);
+		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), m_color);
 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
 		
 
 		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);;
-		g_engine->m_render->SetModelConstants(/*m_orientation.GetAsMatrix_IFwd_JLeft_KUp()*/GetModelToWorldTransform(), Rgba8(m_color.r + 10, m_color.g + 10, m_color.b + 10)); //Rgba8((m_color.r / (unsigned char)1.5), (m_color.g / (unsigned char)1.5), (m_color.b / (unsigned char)1.5)));
+		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), Rgba8(m_color.r + 10, m_color.g + 10, m_color.b + 10)); //Rgba8((m_color.r / (unsigned char)1.5), (m_color.g / (unsigned char)1.5), (m_color.b / (unsigned char)1.5)));
 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
-		
-
 	//}
 }
 
@@ -111,12 +105,9 @@ void Actor::AddVertsForMe()
 		AddVertsForZCylinder3D(m_physicsCylinder, Vec3(0,0,0) , m_physicsHeight, m_physicsRadius, m_color);
 		if (m_definition->m_name == "Marine" || m_definition->m_name == "Demon")	// change back after testing
 		{
-		Vec3 test = Vec3(0, 0, m_definition->m_cameraEyeHeight);
- 		AddVertsForCone3D(m_physicsCylinder, test + (Vec3(1,0,0) * m_physicsRadius), test + (Vec3(1,0,0) * .5), .125);
-		//AddVertsForArrow3D(m_physicsCylinder, test, test + (Vec3( 0,m_orientation.GetForwardDir_IFwd_JLeft_KUp().z,0)  * 1), .0125);
-			
+			Vec3 test = Vec3(0, 0, m_definition->m_cameraEyeHeight);
+ 			AddVertsForCone3D(m_physicsCylinder, test + (Vec3(1,0,0) * m_physicsRadius), test + (Vec3(1,0,0) * .5), .125);
 		}
-
 	}
 }
 
@@ -140,6 +131,17 @@ Mat44 Actor::GetModelToWorldTransform() const
 	return translationMatrix;
 }
 
+Mat44 Actor::GetModelToWorldTransformYawOnly() const
+{
+	// make a translation matrix, make a rotation matrix, append rotation to translation
+	Mat44 translationMatrix = Mat44();
+	translationMatrix.AppendTranslation3D(m_position);
+	EulerAngles yawOnlyOrientation = EulerAngles(m_orientation.m_yawDegrees, 0.f, 0.f);
+	Mat44 rotationMatrix = yawOnlyOrientation.GetAsMatrix_IFwd_JLeft_KUp();
+	translationMatrix.Append(rotationMatrix);
+	return translationMatrix;
+}
+
 void Actor::TestPojectileInput(Vec3 movement)
 {
 	m_position += movement * 100.;
@@ -147,47 +149,18 @@ void Actor::TestPojectileInput(Vec3 movement)
 
 void Actor::UpdatePhysics(float deltaSeconds)
 {
-	//m_velocity += this->getForwardNormal() * PLAYER_SHIP_ACCELERATION * m_thrustFraction * deltaSeconds;
 	if (m_definition->m_physicsSimulated)
 	{
-		
-		m_velocity += (m_acceleration * deltaSeconds);
-		
-
 		if (!m_isFlying)
 		{
 			m_velocity = Vec3(m_velocity.x,m_velocity.y,0.f);
 		}
 
-		//m_velocity += m_definition->m_drag * (-m_velocity);
-		float dragMultiplier = 1.0f - (m_definition->m_drag * deltaSeconds);
-		if (dragMultiplier < 0.f)
-		{
-			dragMultiplier = 0.f;
-		}
+		AddForce(- m_velocity * m_definition->m_drag);
 
-		m_velocity *= dragMultiplier;
-		
-		float currentSpeed = m_velocity.GetLength();
-		float maxSpeed = 0.f;
-		if (m_isRunning)
-		{
-			maxSpeed = m_definition->m_runSpeed;
-		}
-		else
-		{
-			maxSpeed = m_definition->m_walkSpeed;
-		}
-
-		if (currentSpeed > maxSpeed)
-		{
-			m_velocity = m_velocity.GetNormalized() * maxSpeed;
-		}
-
-
+		m_velocity += (m_acceleration * deltaSeconds);
 		m_position += m_velocity * deltaSeconds;
 		m_acceleration = Vec3(0,0,0);
-
 	}
 }
 
@@ -199,7 +172,7 @@ void Actor::Damage(Actor* damager)
 
 void Actor::AddForce(Vec3 force)
 {
-	m_acceleration = (force);
+	m_acceleration += (force);
 }
 
 void Actor::AddImpulse(Vec3 impulse)
