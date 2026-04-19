@@ -67,8 +67,9 @@ void Game::Startup()
 	ActorDefinition::InitializeDefinitions("Data/Definitions/ProjectileActorDefinitions.xml");
 	WeaponDefinition::InitializeDefinitions("Data/Definitions/WeaponDefinitions.xml");
 	ActorDefinition::InitializeDefinitions("Data/Definitions/ActorDefinitions.xml");
-}
 
+	m_player = new PlayerController();
+}
 
 void Game::Update(float deltaSeconds)			
 {

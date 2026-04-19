@@ -13,6 +13,7 @@ public:
 	ActorHandle		m_actorHandle = ActorHandle::INVALID;
 	Map*			m_map		  = nullptr;
 
+	virtual void		DamagedBy(Actor* damageSource);
 	virtual void		Possess(ActorHandle HauntingActor);
 	Actor*			    GetActor();
 

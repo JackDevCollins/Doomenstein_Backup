@@ -54,6 +54,10 @@ public:
 	std::string						m_spriteSheet;
 	Vec2							m_cellCount;
 
+	bool							m_aiEnabled;
+	float							m_sightRadius;
+	float							m_sightAngle;
+
 	Strings							m_sounds;
 	Strings							m_inventory;
 

@@ -190,6 +190,11 @@ void Map::Update(float deltaSeconds)
 	}
 
 	DeleteDestroyedActors();
+
+	if (m_game->m_player->GetActor() == nullptr)
+	{
+		CreatePlayerActor();
+	}
 }
 
 void Map::CollideActors()
@@ -198,7 +203,7 @@ void Map::CollideActors()
 	{
 		for (size_t j = i + 1; j < m_actors.size(); ++j) 
 		{
-			if(m_actors[i] == nullptr || m_actors[j] == nullptr)	return;
+			if (m_actors[i] == nullptr || m_actors[j] == nullptr)	return;
 
 			CollideActors(m_actors[i], m_actors[j]);
 		}
@@ -357,13 +362,7 @@ void Map::CreatePlayerActor()
 		ERROR_RECOVERABLE("PLAYER ACTOR FAILED TO ADD");
 	}
 
-	if (m_game->m_player == nullptr)
-	{
-		m_game->m_player = new PlayerController() ;
-	}
-
 	m_game->m_player->Possess(newPlayer->m_handle);
-
 }
 
 void Map::DeleteDestroyedActors()
@@ -372,7 +371,7 @@ void Map::DeleteDestroyedActors()
 	{
 		if (m_actors[garbageIndex] != nullptr && m_actors[garbageIndex]->m_isGarbage)
 		{
-			delete m_actors[garbageIndex];													//////////////////////////////////// should this be &?
+			delete m_actors[garbageIndex];
 			m_actors[garbageIndex] = nullptr;
 		}
 	}
@@ -442,12 +441,16 @@ bool Map::AddActorToMap(Actor* actor)
 
 Actor* Map::GetActorByHandle(const ActorHandle handle) const
 {
+	if (handle == ActorHandle::INVALID) return nullptr;
+
 	int index = handle.GetIndex();
-	if (m_actors[index]->m_handle.GetUID() == handle.GetUID())
+
+	if (m_actors[index] == nullptr) return nullptr;
+
+	if (m_actors[index]->m_handle.m_data == handle.m_data)
 	{
 		return m_actors[index];
 	}
-	else
 	return nullptr;
 }
 
@@ -473,18 +476,12 @@ void Map::Render()
 
 RaycastResult3D Map::RaycastAll(const Vec3& start, const Vec3& direction, float distance, Actor* owner /*= nullptr*/) const
 {
-	RaycastResult3D result;
-	result.m_didImpact = false;
-	result.m_rayDirection = direction;
-	result.m_rayLength = distance;
-	result.m_rayStartPosition = start;
-
 	float lowestDistance = 100000000.f;
 	int lowestIndex = -1;
 
 	RaycastResult3D XYResult	= RaycastWorldXY(start, direction, distance);
 	RaycastResult3D ZResult		= RaycastWorldZ(start, direction, distance);
-	RaycastResult3D ActorResult = RaycastWorldActors(start, direction, distance);
+	RaycastResult3D ActorResult = RaycastWorldActors(start, direction, distance, owner);
 	std::vector<RaycastResult3D> results;
 	results.push_back(XYResult);
 	results.push_back(ZResult);
@@ -526,6 +523,8 @@ RaycastResult3D Map::RaycastWorldXY(const Vec3& start, const Vec3& direction, fl
 		result.m_impactDistance = 0.f;
 		result.m_impactPosition = start;
 		result.m_impactNormal = - result.m_rayDirection;
+		result.m_impactedObjectID = "Wall";
+		result.m_pointerToImpactedObject = nullptr;
 		return result;
 	}
 	float fwdDistPerXCrossing;
@@ -584,6 +583,8 @@ RaycastResult3D Map::RaycastWorldXY(const Vec3& start, const Vec3& direction, fl
 				result.m_didImpact = true;
  				result.m_impactDistance = fwdDistAtNextXCrossing;
  				result.m_impactPosition = start + (result.m_rayDirection * result.m_impactDistance);
+				result.m_impactedObjectID = "Wall";
+				result.m_pointerToImpactedObject = nullptr;
 				if (tileStepDirectionX == -1)
 				{
 					result.m_impactNormal = Vec3(1,0,0);
@@ -609,6 +610,8 @@ RaycastResult3D Map::RaycastWorldXY(const Vec3& start, const Vec3& direction, fl
 				result.m_didImpact = true;
  				result.m_impactDistance = fwdDistAtNextYCrossing;
  				result.m_impactPosition = start + (result.m_rayDirection * result.m_impactDistance);
+				result.m_impactedObjectID = "Wall";
+				result.m_pointerToImpactedObject = nullptr;
 				if (tileStepDirectionY == -1)
 				{
 					result.m_impactNormal = Vec3(0, 1, 0);
@@ -643,6 +646,8 @@ RaycastResult3D Map::RaycastWorldZ(const Vec3& start, const Vec3& direction, flo
 			result.m_impactDistance = (distance * t);
 			result.m_impactPosition = start + (result.m_rayDirection * result.m_impactDistance);
 			result.m_impactNormal = Vec3(0,0,-1);
+			result.m_impactedObjectID = "Ceiling";
+			result.m_pointerToImpactedObject = nullptr;
 			return result;
 		}
 	}
@@ -655,6 +660,8 @@ RaycastResult3D Map::RaycastWorldZ(const Vec3& start, const Vec3& direction, flo
 			result.m_impactDistance = (distance * t);
 			result.m_impactPosition = start + (result.m_rayDirection * result.m_impactDistance);
 			result.m_impactNormal = Vec3(0,0,1);
+			result.m_impactedObjectID = "Floor";
+			result.m_pointerToImpactedObject = nullptr;
 			return result;
 		}
 	}
@@ -675,8 +682,12 @@ RaycastResult3D Map::RaycastWorldActors(const Vec3& start, const Vec3& direction
 	for (int index = 0; index < m_actors.size(); ++index)
 	{	
 		Actor* actor = m_actors[index];
+
+		if(actor == owner) continue;
 		
-		if (IsPointInsideDisc2D(Vec2(start.x, start.y), Vec2(actor->m_position.x, m_actors[index]->m_position.y), actor->m_physicsRadius))
+		if(actor == nullptr) continue;
+
+		if (IsPointInsideDisc2D(Vec2(start.x, start.y), Vec2(actor->m_position.x, actor->m_position.y), actor->m_physicsRadius))
 		{
 			float aTop = actor->m_position.z + actor->m_physicsHeight;
 			float aBottom = actor->m_position.z;
@@ -691,6 +702,8 @@ RaycastResult3D Map::RaycastWorldActors(const Vec3& start, const Vec3& direction
 				result.m_impactDistance = 0.0f;
 				result.m_impactNormal = - result.m_rayDirection;
 				result.m_impactPosition = start;
+				result.m_impactedObjectID = actor->m_definition->m_name;
+				result.m_pointerToImpactedObject = actor;
 				return result;
 			}
 		}
@@ -701,6 +714,11 @@ RaycastResult3D Map::RaycastWorldActors(const Vec3& start, const Vec3& direction
 		if (cylinderRaycast.m_didImpact && cylinderRaycast.m_impactDistance < closestHit.m_impactDistance)
 		{
 			closestHit = cylinderRaycast;
+			closestHit.m_pointerToImpactedObject = actor;
+			if (actor->m_definition)
+			{
+				closestHit.m_impactedObjectID = actor->m_definition->m_name;
+			}
 		}
 	}
 

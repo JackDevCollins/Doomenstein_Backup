@@ -11,6 +11,6 @@ public:
 	
 ActorHandle			m_targetActorHandle = ActorHandle::INVALID;
 
-void				DamagedBy(Actor* damageSource);
+virtual void		DamagedBy(Actor* damageSource);
 void				Update(float deltaSeconds);
 };

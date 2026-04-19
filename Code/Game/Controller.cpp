@@ -5,13 +5,18 @@
 #include "Game/App.hpp"
 #include "Engine/Math/Mat44.hpp"
 
+void Controller::DamagedBy(Actor* /*damageSource*/)
+{
+
+}
+
 void Controller::Possess(ActorHandle HauntingActor)
 {
 	if (m_map == nullptr)
 	{
 		m_map = g_app->m_game->m_currentMap;
 	}
-	if (m_actorHandle == ActorHandle::INVALID && m_map->m_actors[HauntingActor.GetIndex()]->m_definition->m_canBePossessed)
+	if ( m_map->m_actors[HauntingActor.GetIndex()]->m_definition->m_canBePossessed)
 	{
 		m_actorHandle = HauntingActor;
 		GetActor()->m_controller = this;

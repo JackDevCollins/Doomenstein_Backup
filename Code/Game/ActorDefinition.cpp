@@ -81,6 +81,13 @@ bool ActorDefinition::LoadFromXmlElement(const XmlElement& element)
 			m_cameraFOV				= ParseXmlAttribute(*childElement, "cameraFOV", m_cameraFOV);
 		}
 
+		else if (childName == "AI")
+		{
+			m_aiEnabled				= ParseXmlAttribute(*childElement, "aiEnabled", false);
+			m_sightRadius			= ParseXmlAttribute(*childElement, "sightRadius", m_sightRadius);
+			m_sightAngle			= ParseXmlAttribute(*childElement, "sightAngle", m_sightAngle);
+		}
+
 		else if (childName == "Visuals")
 		{
 			m_visualsSize			= ParseXmlAttribute(*childElement, "size", m_visualsSize);

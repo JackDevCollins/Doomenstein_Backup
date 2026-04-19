@@ -7,6 +7,7 @@
 #include "Game/Weapon.hpp"
 #include "Engine/Core/Engine.hpp"
 #include "Engine/Renderer/Camera.hpp"
+#include "Engine/Core/Timer.hpp"
 
 PlayerController::PlayerController()
 {
@@ -35,17 +36,31 @@ void PlayerController::UpdateInput()
 void PlayerController::UpdateCamera()
 {
 	float tempAspect = g_engine->m_window->m_config.m_clientAspect;
-	m_camera->SetPerspectiveView(tempAspect, 60.f, 0.1f, 100.0f);
+	if (GetActor()->m_definition->m_faction == "Demon")
+	{
+		m_camera->SetPerspectiveView(tempAspect, 100.f, 0.1f, 100.0f);
+	}
+	else
+	{
+		m_camera->SetPerspectiveView(tempAspect, 60.f, 0.1f, 100.0f);
+	}
 
 	if (m_cameraMode)
 	{
+		float eyeHeight;
+
 		if (!GetActor()->m_isDead)
 		{
-			Vec3 actorPosition = GetActor()->m_position;
-			Vec3 cameraPosition = Vec3(actorPosition.x, actorPosition.y, GetActor()->m_definition->m_cameraEyeHeight);
-			m_camera->SetPosition(cameraPosition);
-			m_camera->SetOrientation(GetActor()->m_orientation);
+			eyeHeight = GetActor()->m_definition->m_cameraEyeHeight;
 		}
+		else
+		{
+			eyeHeight = GetClampedZeroToOne(1.f - (GetActor()->m_decomposeTimer->GetElapsedFraction() * 2.f)) * GetActor()->m_definition->m_cameraEyeHeight;
+		}
+		Vec3 actorPosition = GetActor()->m_position;
+		Vec3 cameraPosition = Vec3(actorPosition.x, actorPosition.y, eyeHeight); 
+		m_camera->SetPosition(cameraPosition);
+		m_camera->SetOrientation(GetActor()->m_orientation);
 	}
 	else
 	{
@@ -182,7 +197,7 @@ void PlayerController::ActorInput()
 	{
 		if (GetActor()->m_currentWeapon != nullptr)
 		{
-			GetActor()->m_currentWeapon->Fire();
+			GetActor()->m_currentWeapon->Fire();	
 		}
 	}
 

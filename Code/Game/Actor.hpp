@@ -27,8 +27,7 @@ public:
 	void  TestPojectileInput(Vec3 movement);
 
 	void	UpdatePhysics(float deltaSeconds);
-	void	Damage(Actor* damager);
-	void	DeathRattle();
+	void	Damage(Actor* damager, float damageAmount);
 	void	AddForce(Vec3 force);
 	void	AddImpulse(Vec3 impulse);
 	void	OnCollide();

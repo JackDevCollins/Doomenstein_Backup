@@ -78,18 +78,21 @@ void Actor::Update([[maybe_unused]]float deltaSeconds)
 {
 	if(m_definition->m_name == "SpawnPoint") return;
 
-
 	if (m_controller != nullptr && static_cast<PlayerController*>(m_controller) == m_game->m_player && !m_isDead)
 	{
 		static_cast<PlayerController*>(m_controller)->UpdateInput();
-		static_cast<PlayerController*>(m_controller)->UpdateCamera();
 	}
-	else if(!m_isDead)
+
+	else if (!m_isDead)
 	{
 		if (m_aiController)
 		{
 			m_aiController->Update(deltaSeconds);
 		}
+	}
+	if (m_controller != nullptr && static_cast<PlayerController*>(m_controller) == m_game->m_player)
+	{
+		static_cast<PlayerController*>(m_controller)->UpdateCamera();
 	}
 
 	UpdatePhysics(deltaSeconds);
@@ -99,11 +102,8 @@ void Actor::Update([[maybe_unused]]float deltaSeconds)
 		if (!m_isDead)
 		{
 			m_decomposeTimer->Start();
-			m_isDead = true;
-			
+			m_isDead = true;	
 		}
-
-	DeathRattle();
 	
 		if (m_decomposeTimer->HasPeriodElapsed())
 		{
@@ -116,18 +116,26 @@ void Actor::Render() const
 {
 	if(!m_definition->m_isVisible) return;
 
- 	if (m_controller == nullptr || !m_game->m_player->m_cameraMode)	// change back after testing
+	Rgba8 actorColor = m_color;
+
+	if (m_isDead)
+	{
+		actorColor.ScaleColor(.4f);
+	}
+
+ 	if (m_controller == nullptr || !m_game->m_player->m_cameraMode)
  	{
 		g_engine->m_render->BindTexture(nullptr);
 		g_engine->m_render->BindShader(nullptr);
 		g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
 		g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
 		g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
-		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), m_color);
+
+		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor);
 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
 		
 		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);;
-		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), Rgba8(m_color.r + 10, m_color.g + 10, m_color.b + 10)); //Rgba8((m_color.r / (unsigned char)1.5), (m_color.g / (unsigned char)1.5), (m_color.b / (unsigned char)1.5)));
+		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), Rgba8(actorColor.r + 10, actorColor.g + 10, actorColor.b + 10)); //Rgba8((m_color.r / (unsigned char)1.5), (m_color.g / (unsigned char)1.5), (m_color.b / (unsigned char)1.5)));
 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
 	}
 }
@@ -198,26 +206,17 @@ void Actor::UpdatePhysics(float deltaSeconds)
 	}
 }
 
-void Actor::Damage(Actor* damager)
+void Actor::Damage(Actor* damager, float damageAmount)
 {
-	m_health -= damager->m_owner->m_currentWeapon->m_definition->m_rayDamage;
-	m_aiController->DamagedBy(damager->m_owner);
-}
+	m_health -= damageAmount;
 
-void Actor::DeathRattle()
-{
-	if (m_controller == static_cast<PlayerController*>(m_game->m_player))
+	if (m_definition->m_aiEnabled)
 	{
-		float fullCameraHeightFromGround = m_definition->m_cameraEyeHeight + m_position.z;
-		float currentHeight = fullCameraHeightFromGround;
-		if (m_game->m_player != nullptr)
-		{
-			currentHeight = m_game->m_player->m_camera->GetPosition().z;
-		}
-
-		float newZHeight = RangeMap((float)m_decomposeTimer->GetElapsedTime(), 0.00, (float)m_decomposeTimer->m_period, fullCameraHeightFromGround, currentHeight);
-
-		static_cast<PlayerController*>(m_controller)->m_camera->SetPosition(Vec3(m_position.x, m_position.y, newZHeight) ); 
+		m_aiController->DamagedBy(damager);
+	} 
+	else
+	{
+		static_cast<PlayerController*>(m_controller)->DamagedBy(damager);
 	}
 }
 

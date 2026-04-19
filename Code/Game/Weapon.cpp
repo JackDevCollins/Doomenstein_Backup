@@ -32,6 +32,15 @@ void Weapon::Fire()
 			m_owner->m_map->m_game->m_player->m_camera->GetOrientation().GetForwardDir_IFwd_JLeft_KUp(),
 			m_definition->m_rayRange, m_owner);
 
+			if (bulletRaycast.m_didImpact)
+			{
+				if (bulletRaycast.m_impactedObjectID == "Demon")
+				{
+					static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->Damage(m_owner, m_definition->m_rayDamage);
+					static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->AddImpulse( - bulletRaycast.m_impactNormal * m_definition->m_rayDamage);
+				}
+			}
+
 			DebugAddWorldCylinder(bulletRaycast.m_rayStartPosition, (bulletRaycast.m_rayStartPosition + (bulletRaycast.m_rayDirection * bulletRaycast.m_rayLength)), 0.01f, 10.f, Rgba8::WHITE, Rgba8::WHITE, DebugRenderMode::X_RAY);
 			if (bulletRaycast.m_didImpact)
 			{
