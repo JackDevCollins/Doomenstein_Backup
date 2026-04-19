@@ -9,8 +9,8 @@ class AIController : public Controller
 {
 public:
 	
-ActorHandle*		m_targetActorHandle;
+ActorHandle			m_targetActorHandle = ActorHandle::INVALID;
 
 void				DamagedBy(Actor* damageSource);
-void				Update();
+void				Update(float deltaSeconds);
 };

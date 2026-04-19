@@ -28,9 +28,6 @@
     <ClCompile Include="GameCommon.cpp">
       <Filter>Code\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Player.cpp">
-      <Filter>Gameplay</Filter>
-    </ClCompile>
     <ClCompile Include="Map.cpp">
       <Filter>Gameplay</Filter>
     </ClCompile>
@@ -61,9 +58,6 @@
     <ClCompile Include="PlayerController.cpp">
       <Filter>Code\Game</Filter>
     </ClCompile>
-    <ClCompile Include="ProjectileActorDefinition.cpp">
-      <Filter>Code\Game</Filter>
-    </ClCompile>
     <ClCompile Include="WeaponDefinition.cpp">
       <Filter>Code\Game</Filter>
     </ClCompile>
@@ -83,9 +77,6 @@
     </ClInclude>
     <ClInclude Include="EngineBuildPreferences.hpp">
       <Filter>Framework</Filter>
-    </ClInclude>
-    <ClInclude Include="Player.hpp">
-      <Filter>Gameplay</Filter>
     </ClInclude>
     <ClInclude Include="Map.hpp">
       <Filter>Gameplay</Filter>
@@ -115,9 +106,6 @@
       <Filter>Code\Game</Filter>
     </ClInclude>
     <ClInclude Include="PlayerController.hpp">
-      <Filter>Code\Game</Filter>
-    </ClInclude>
-    <ClInclude Include="ProjectileActorDefinition.hpp">
       <Filter>Code\Game</Filter>
     </ClInclude>
     <ClInclude Include="WeaponDefinition.hpp">

@@ -232,9 +232,7 @@
     <ClCompile Include="Main_Windows.cpp" />
     <ClCompile Include="Map.cpp" />
     <ClCompile Include="MapDefinition.cpp" />
-    <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerController.cpp" />
-    <ClCompile Include="ProjectileActorDefinition.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="TileDefinition.cpp" />
     <ClCompile Include="Weapon.cpp" />
@@ -252,9 +250,7 @@
     <ClInclude Include="GameCommon.hpp" />
     <ClInclude Include="Map.hpp" />
     <ClInclude Include="MapDefinition.hpp" />
-    <ClInclude Include="Player.hpp" />
     <ClInclude Include="PlayerController.hpp" />
-    <ClInclude Include="ProjectileActorDefinition.hpp" />
     <ClInclude Include="Tile.hpp" />
     <ClInclude Include="TileDefinition.hpp" />
     <ClInclude Include="Weapon.hpp" />

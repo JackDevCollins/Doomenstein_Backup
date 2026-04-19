@@ -46,6 +46,10 @@ bool WeaponDefinition::LoadFromXmlElement(const XmlElement& element)
 
 	m_name 				=	 ParseXmlAttribute(element, "name", m_name);
 	m_refireTime		=	 ParseXmlAttribute(element, "refireTime", m_refireTime);
+	m_projectileCount	=	 ParseXmlAttribute(element, "projectileCount", 0);
+	m_projectileActor	=	 ParseXmlAttribute(element, "projectileActor", "Invalid");
+	m_projectileCone	=	 ParseXmlAttribute(element, "projectileCone", 0.0f);
+	m_projectileSpeed	=	 ParseXmlAttribute(element, "projectileSpeed", 0.0f);
 	m_rayCount			=	 ParseXmlAttribute(element, "rayCount", m_rayCount);
 	m_rayCone			=	 ParseXmlAttribute(element, "rayCone", m_rayCone);
 	m_rayRange			=	 ParseXmlAttribute(element, "rayRange", m_rayRange);
@@ -73,7 +77,7 @@ bool WeaponDefinition::LoadFromXmlElement(const XmlElement& element)
 
 				if (grandChildName == "Animation")
 				{
-					animationDefinition newAnimation;
+					animation newAnimation;
 
 					newAnimation.m_name				= ParseXmlAttribute(*grandChildElement, "name", "invalid");
 					newAnimation.m_shader			= ParseXmlAttribute(*grandChildElement, "shader", "invalid");
@@ -90,8 +94,6 @@ bool WeaponDefinition::LoadFromXmlElement(const XmlElement& element)
 			}
 		}
 
-		
-
 		else if (childName == "Sounds")
 		{
 			const XmlElement* grandChildElement = childElement->FirstChildElement();
@@ -103,8 +105,8 @@ bool WeaponDefinition::LoadFromXmlElement(const XmlElement& element)
 				{
 					std::string sound = "invalid";
 					std::string soundLocation = "invalid";
-					sound = ParseXmlAttribute(*grandChildElement, "sound", sound);
-					soundLocation = ParseXmlAttribute(*grandChildElement, "name", soundLocation);
+					sound						= ParseXmlAttribute(*grandChildElement, "sound", sound);
+					soundLocation				= ParseXmlAttribute(*grandChildElement, "name", soundLocation);
 					std::string soundEntry = sound + "+" + soundLocation;
 					m_sounds.push_back(soundEntry);
 

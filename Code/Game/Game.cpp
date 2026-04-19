@@ -64,9 +64,9 @@ void Game::Startup()
 
 	TileDefinition::InitializeDefinitions("Data/Definitions/TileDefinitions.xml");
 	MapDefinition::InitializeDefinitions("Data/Definitions/MapDefinitions.xml");
-	ActorDefinition::InitializeDefinitions("Data/Definitions/ActorDefinitions.xml");
-	//ProjectileActorDefinition::InitializeDefinitions("Data/Definitions/ProjectileActorDefinitions.xml");
+	ActorDefinition::InitializeDefinitions("Data/Definitions/ProjectileActorDefinitions.xml");
 	WeaponDefinition::InitializeDefinitions("Data/Definitions/WeaponDefinitions.xml");
+	ActorDefinition::InitializeDefinitions("Data/Definitions/ActorDefinitions.xml");
 }
 
 
@@ -220,14 +220,16 @@ void Game::CheckInputs()
 	}
 	if (m_player != nullptr)
 	{
-		if (g_engine->m_input->WasKeyJustPressed('F'))		// toggle possession camera
+		if (g_engine->m_input->WasKeyJustPressed('F'))			// toggle possession camera
 		{
 			m_player->ToggleCameraMode();
 		}
+		if (g_engine->m_input->WasKeyJustPressed('N'))		// Possess Next Actor
+		{
+			m_player->PossessNextActor();
+		}
 	}
 	
-
-
 	///////// Lighting Controls /////////
 
 	char buffer[32];
@@ -323,40 +325,8 @@ void Game::CheckInputs()
 
 		DebugAddMessage("Ambient Intensity Increased to: " + ambientIntensity, 2.f);
 	}
-
-	///////// debug render controls ///////
-	if (g_engine->m_input->WasKeyJustPressed('1'))				// Spawn a line from player along their fwd 20units long dur 10, radius .0625, xray yellow
-	{
-		DebugAddWorldCylinder(m_player->m_position, m_player->m_position + (m_player->m_orientation.GetForwardDir_IFwd_JLeft_KUp().GetNormalized() * 20.f),
-				0.0625, -1.f, Rgba8::YELLOW,Rgba8::YELLOW,DebugRenderMode::X_RAY);
-	}
-	if (g_engine->m_input->IsKeyDown('2'))
-	{
-		DebugAddWorldSphere(Vec3(m_player->m_position.x, m_player->m_position.y, 0.f), .5f, 60, Rgba8(150,75,0), Rgba8(150,75,0));
-	}
-	if (g_engine->m_input->WasKeyJustPressed('3'))				// Spawn a wire sphere 2u player fwd, duration 5, radius 1, w/ depth, green -> red
-	{
-		DebugAddWorldWireSphere(m_player->m_position + (m_player->m_orientation.GetForwardDir_IFwd_JLeft_KUp().GetNormalized() * 2.f), 1.f, 5.f, Rgba8::GREEN, Rgba8::RED);
-	}
-	if (g_engine->m_input->WasKeyJustPressed('4'))				// spawn a basis using the current player model matrix, duration 20, w/ depth, white
-	{
-		DebugAddBasis(m_player->GetModelToWorldTransform().MakeTranslation3D(m_player->m_position), 20.f, 1.f, 0.25f, -5.f);
-	}
-	if (g_engine->m_input->WasKeyJustPressed('5'))				// spawn a full opposing billboarded 3d text showing player pos and orien. duration 10, height 0.125, w/ depth color white -> red
-	{
-
-	}
-	if (g_engine->m_input->WasKeyJustPressed('6'))		// spawn wireframe cylinder @ player, duration 10, radius 0.5, height 1, w/ depth, color white -> red
-	{
-		DebugAddWorldWireCylinder(m_player->m_position, m_player->m_position + (m_player->m_orientation.GetAsMatrix_IFwd_JLeft_KUp().GetKBasis3D().GetNormalized() * 1.f), 0.5f, 10.f, Rgba8::WHITE, Rgba8::RED);
-	}
-	if (g_engine->m_input->WasKeyJustPressed('7'))
-	{
-		DebugAddMessage("Camera orientation " + std::to_string(m_player->m_orientation.m_yawDegrees) + " , " + std::to_string(m_player->m_orientation.m_pitchDegrees) +
-			" , " + std::to_string(m_player->m_orientation.m_rollDegrees), 5.f, Rgba8::MAGENTA);
-	}
-
 }
+	
 
 void Game::RenderEntities() const
 {

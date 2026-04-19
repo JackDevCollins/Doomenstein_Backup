@@ -13,10 +13,9 @@ void Controller::Possess(ActorHandle HauntingActor)
 	}
 	if (m_actorHandle == ActorHandle::INVALID && m_map->m_actors[HauntingActor.GetIndex()]->m_definition->m_canBePossessed)
 	{
-		
 		m_actorHandle = HauntingActor;
 		GetActor()->m_controller = this;
-		m_map->m_actors[HauntingActor.GetIndex()]->OnPossessed();
+		GetActor()->OnPossessed();
 	}
 
 	// get index from actorHandle and possess the next in the list. activate

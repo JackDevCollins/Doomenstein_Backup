@@ -41,6 +41,10 @@ Actor::Actor(Map* map, Game* game, const ActorDefinition* actorDef)
 		Weapon* newItem = new Weapon(this, WeaponDefinition::GetByName(item));
 		m_inventory.push_back(newItem);
 	}
+	if (!m_inventory.empty())
+	{
+		m_currentWeapon = m_inventory[0];
+	}
 
 	if (m_definition->m_name == "SpawnPoint")
 	{
@@ -49,40 +53,71 @@ Actor::Actor(Map* map, Game* game, const ActorDefinition* actorDef)
 	if (m_definition->m_name == "Marine")
 	{
 		m_color = Rgba8(73, 188, 13);
+		AddVertsForMe();
+		//m_aiController = new AIController();
 	}
 	if (m_definition->m_name == "Demon")
 	{
 		m_color = Rgba8(255,105,180);
+		AddVertsForMe();
+		m_aiController = new AIController();
 	}
-	AddVertsForMe();
-	m_aiController = new AIController();
+	if (m_definition->m_name == "PlasmaProjectile")
+	{
+		m_color = Rgba8::BLUE;
+		AddVertsForMe();
+	}
 
 }	
 Actor::~Actor()
 {
-
+	
 }
 
 void Actor::Update([[maybe_unused]]float deltaSeconds)		
 {
-	if (m_controller != nullptr)
+	if(m_definition->m_name == "SpawnPoint") return;
+
+
+	if (m_controller != nullptr && static_cast<PlayerController*>(m_controller) == m_game->m_player && !m_isDead)
 	{
 		static_cast<PlayerController*>(m_controller)->UpdateInput();
 		static_cast<PlayerController*>(m_controller)->UpdateCamera();
 	}
-	else
+	else if(!m_isDead)
 	{
-		m_aiController->Update();
+		if (m_aiController)
+		{
+			m_aiController->Update(deltaSeconds);
+		}
 	}
 
 	UpdatePhysics(deltaSeconds);
+
+	if (m_health <= 0)
+	{	
+		if (!m_isDead)
+		{
+			m_decomposeTimer->Start();
+			m_isDead = true;
+			
+		}
+
+	DeathRattle();
+	
+		if (m_decomposeTimer->HasPeriodElapsed())
+		{
+			m_isGarbage = true;
+		}
+	}
 }
 
 void Actor::Render() const
 {
 	if(!m_definition->m_isVisible) return;
-// 	if (m_controller != nullptr)	// change back after testing
-// 	{
+
+ 	if (m_controller == nullptr || !m_game->m_player->m_cameraMode)	// change back after testing
+ 	{
 		g_engine->m_render->BindTexture(nullptr);
 		g_engine->m_render->BindShader(nullptr);
 		g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
@@ -91,11 +126,10 @@ void Actor::Render() const
 		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), m_color);
 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
 		
-
 		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);;
 		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), Rgba8(m_color.r + 10, m_color.g + 10, m_color.b + 10)); //Rgba8((m_color.r / (unsigned char)1.5), (m_color.g / (unsigned char)1.5), (m_color.b / (unsigned char)1.5)));
 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
-	//}
+	}
 }
 
 void Actor::AddVertsForMe()
@@ -116,9 +150,9 @@ void Actor::Attack()
 	m_currentWeapon->Fire();
 }
 
-void Actor::EquipWeapon()
+void Actor::EquipWeapon(int weaponNumber)
 {
-
+	m_currentWeapon = m_inventory[weaponNumber];
 }
 
 Mat44 Actor::GetModelToWorldTransform() const
@@ -170,6 +204,23 @@ void Actor::Damage(Actor* damager)
 	m_aiController->DamagedBy(damager->m_owner);
 }
 
+void Actor::DeathRattle()
+{
+	if (m_controller == static_cast<PlayerController*>(m_game->m_player))
+	{
+		float fullCameraHeightFromGround = m_definition->m_cameraEyeHeight + m_position.z;
+		float currentHeight = fullCameraHeightFromGround;
+		if (m_game->m_player != nullptr)
+		{
+			currentHeight = m_game->m_player->m_camera->GetPosition().z;
+		}
+
+		float newZHeight = RangeMap((float)m_decomposeTimer->GetElapsedTime(), 0.00, (float)m_decomposeTimer->m_period, fullCameraHeightFromGround, currentHeight);
+
+		static_cast<PlayerController*>(m_controller)->m_camera->SetPosition(Vec3(m_position.x, m_position.y, newZHeight) ); 
+	}
+}
+
 void Actor::AddForce(Vec3 force)
 {
 	m_acceleration += (force);
@@ -187,34 +238,36 @@ void Actor::OnCollide()
 
 void Actor::OnPossessed()
 {
-	for (int index = 0; index < m_map->m_actors.size(); ++index)
+	if (static_cast<PlayerController*>(m_controller) == m_game->m_player)
 	{
-		Actor* testActor = m_map->m_actors[index];
-
-		if (testActor->m_handle != this->m_handle)
-		{
-			if (testActor->m_controller != nullptr)
-			{
-				testActor->OnUnPossessed();
-			}
-		}
+		m_game->m_player->m_cameraMode = true;
+		static_cast<PlayerController*>(m_controller)->m_position = m_position + Vec3(0.f, 0.f, m_definition->m_cameraEyeHeight);
+		static_cast<PlayerController*>(m_controller)->m_orientation = m_orientation;
 	}
-	m_game->m_player->m_cameraMode = true;
 }
 
 void Actor::OnUnPossessed()
 {
 	m_controller = nullptr;
 
-	m_aiController->Possess(m_handle);
+	if (m_aiController)
+	{
+		m_aiController->Possess(m_handle);
+	}
 }
 
-void Actor::MoveInDirection()
+void Actor::MoveInDirection(Vec3 direction, float speed)
 {
+	float drag = m_definition->m_drag;
 
+	AddForce(direction * speed * drag);
 }
 
-void Actor::TurnInDirection()
+void Actor::TurnInDirection(Vec3 goal, float deltaSeconds)
 {
+	Vec2 actorToGoal = Vec2(goal.x - m_position.x, goal.y - m_position.y);
+	float goalYaw = actorToGoal.GetOrientationDegrees();
 
+	m_orientation.m_yawDegrees = GetTurnedTowardDegrees(m_orientation.m_yawDegrees, goalYaw, (m_definition->m_turnSpeed * deltaSeconds) );
+	
 }

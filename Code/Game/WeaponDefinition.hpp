@@ -5,7 +5,7 @@
 #include "Engine/Core/XmlUtils.hpp"
 #include "Engine/Math/Vec2.hpp"
 
-class ProjectileActorDefinition;
+class ActorDefinition;
 
 class WeaponDefinition
 {
@@ -23,25 +23,25 @@ public:
 	std::string		m_name;
 	float			m_refireTime;
 	// projectile
-	int										m_projectileCount;
-	ProjectileActorDefinition*				m_projectileActor;
-	float									m_projectileCone;
-	float									m_projectileSpeed;
+	int							m_projectileCount;
+	std::string					m_projectileActor;
+	float						m_projectileCone;
+	float						m_projectileSpeed;
 	// hit-scan
-	int										m_rayCount;
-	float									m_rayCone;
-	float									m_rayRange;
-	float									m_rayDamage;
-	float									m_rayImpulse;
+	int							m_rayCount;
+	float						m_rayCone;
+	float						m_rayRange;
+	float						m_rayDamage;
+	float						m_rayImpulse;
 	// visuals
-	std::string								m_HUDshader;
-	std::string								m_baseTexture;
-	std::string								m_reticleTexture;
-	Vec2									m_reticleSize;
-	Vec2									m_spriteSize;
-	Vec2									m_spritePivot;
+	std::string					m_HUDshader;
+	std::string					m_baseTexture;
+	std::string					m_reticleTexture;
+	Vec2						m_reticleSize;
+	Vec2						m_spriteSize;
+	Vec2						m_spritePivot;
 
-	std::vector<animationDefinition>		m_animations;
+	std::vector<animation>		m_animations;
 
-	Strings									m_sounds;
+	Strings						m_sounds;
 };

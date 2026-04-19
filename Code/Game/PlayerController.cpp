@@ -4,6 +4,7 @@
 #include "Game/Map.hpp"
 #include "Game/Game.hpp"
 #include "Game/Actor.hpp"
+#include "Game/Weapon.hpp"
 #include "Engine/Core/Engine.hpp"
 #include "Engine/Renderer/Camera.hpp"
 
@@ -60,6 +61,26 @@ void PlayerController::ToggleCameraMode()
 	{
 		m_position = GetActor()->m_position + Vec3(0.f, 0.f, GetActor()->m_definition->m_cameraEyeHeight);
 		m_orientation = GetActor()->m_orientation;
+	}
+}
+
+void PlayerController::PossessNextActor()
+{
+	int numActors = (int)m_map->m_actors.size();
+	int currentIndex = m_actorHandle.GetIndex();
+	
+	for (int index = 1;  index < numActors; ++index)
+	{
+		int testIndex = (currentIndex + index) % numActors;
+		Actor* testActor = m_map->m_actors[testIndex];
+		
+		if (testActor && testActor->m_definition->m_canBePossessed)
+		{
+			GetActor()->OnUnPossessed();
+			m_actorHandle = ActorHandle::INVALID;
+			Possess(testActor->m_handle);
+			return;
+		}
 	}
 }
 
@@ -154,6 +175,59 @@ void PlayerController::ActorInput()
 		m_map->m_game->m_gameClock->TogglePause();
 	}
 
+
+	///// WEAPON CONTROLS//////
+
+	if (g_engine->m_input->IsKeyDown(KEYCODE_LEFT_MOUSE) || g_engine->m_input->GetController(0).GetRightTrigger() > 0.1)
+	{
+		if (GetActor()->m_currentWeapon != nullptr)
+		{
+			GetActor()->m_currentWeapon->Fire();
+		}
+	}
+
+	if (g_engine->m_input->WasKeyJustPressed('1') || g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::X))
+	{
+		if (GetActor()->m_inventory.size() > 1)
+		{
+			GetActor()->EquipWeapon(0);
+		}
+	}
+	if (g_engine->m_input->WasKeyJustPressed('2') || g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::Y))
+	{
+		if (GetActor()->m_inventory.size() > 1)
+		{
+			GetActor()->EquipWeapon(1);
+		}
+	}
+	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_LEFTARROW) || g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::D_Pad_Down))
+	{
+		int currentIndex = 0; 
+		for (int invIndex = 0; invIndex < GetActor()->m_inventory.size(); ++invIndex)
+		{
+			if (GetActor()->m_inventory[invIndex]->m_name == GetActor()->m_currentWeapon->m_name)
+			{
+				currentIndex = invIndex;
+			}
+		}
+		int newIndex = (currentIndex - 1) % GetActor()->m_inventory.size();
+		GetActor()->EquipWeapon(newIndex);
+	}
+	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_RIGHTARROW) || g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::D_Pad_Up))
+	{
+		int currentIndex = 0;
+		for (int invIndex = 0; invIndex < GetActor()->m_inventory.size(); ++invIndex)
+		{
+			if (GetActor()->m_inventory[invIndex]->m_name == GetActor()->m_currentWeapon->m_name)
+			{
+				currentIndex = invIndex;
+			}
+		}
+		int newIndex = (currentIndex + 1) % GetActor()->m_inventory.size();
+		GetActor()->EquipWeapon(newIndex);
+	}
+
+	///// MOVEMENT CONTROLS //////
 	float speed = 0.f;
 	if (g_engine->m_input->IsKeyDown(KEYCODE_SHIFT) || (g_engine->m_input->GetController(0).IsButtonDown(XboxButtonID::A)))	// Increase speed by a factor of 15 if held
 	{
@@ -168,26 +242,25 @@ void PlayerController::ActorInput()
 	forward.z = 0.f;
 	forward = forward.GetNormalized();
 	Vec3 left = forward.GetRotatedAboutZDegrees(90.f);
-	float drag = GetActor()->m_definition->m_drag;
 
 	if (g_engine->m_input->IsKeyDown('A'))		// translate positive J							
 	{
-		GetActor()->AddForce(left * speed * drag);
+		GetActor()->MoveInDirection(left, speed);
 	}
 
 	if (g_engine->m_input->IsKeyDown('D'))		// translate negative J
 	{
-		GetActor()->AddForce(-left * speed * drag);
+		GetActor()->MoveInDirection(-left, speed);
 	}
 
 	if (g_engine->m_input->IsKeyDown('W'))		// translate positive I
 	{
-		GetActor()->AddForce(forward * speed * drag);
+		GetActor()->MoveInDirection(forward, speed);
 	}
 
 	if (g_engine->m_input->IsKeyDown('S'))		// translate negative I
 	{
-		GetActor()->AddForce(-forward * speed * drag);
+		GetActor()->MoveInDirection(-forward, speed);
 	}
 }
 

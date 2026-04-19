@@ -3,6 +3,7 @@
 #include "Game/Actor.hpp"
 #include "Game/Game.hpp"
 #include "Game/PlayerController.hpp"
+#include "Game/AIController.hpp"
 #include "Engine/Core/Engine.hpp"
 #include "Engine/Core/Vertex_PCUTBN.hpp"
 #include "Engine/Core/VertexUtils.hpp"
@@ -169,8 +170,6 @@ void Map::Startup()
 	CreateStartupActors();
 
 	CreatePlayerActor();
-
-	//CreateTestActors();
 }
 
 void Map::Update(float deltaSeconds)
@@ -182,14 +181,15 @@ void Map::Update(float deltaSeconds)
 	CollideActors();
 	CollideActorsWithMap();
 
-// 	m_game->m_player->UpdateInput();
-// 	m_game->m_player->UpdateCamera();
-	
-
 	for (int index = 0; index < m_actors.size(); ++index)
 	{
-		m_actors[index]->Update(deltaSeconds);
+		if (m_actors[index] != nullptr)
+		{
+			m_actors[index]->Update(deltaSeconds);
+		}
 	}
+
+	DeleteDestroyedActors();
 }
 
 void Map::CollideActors()
@@ -198,6 +198,8 @@ void Map::CollideActors()
 	{
 		for (size_t j = i + 1; j < m_actors.size(); ++j) 
 		{
+			if(m_actors[i] == nullptr || m_actors[j] == nullptr)	return;
+
 			CollideActors(m_actors[i], m_actors[j]);
 		}
 	}
@@ -205,6 +207,7 @@ void Map::CollideActors()
 
 void Map::CollideActors(Actor* actorA, Actor* actorB)
 {
+	
 	Vec2 actorAXYPosition = Vec2(actorA->m_position.x, actorA->m_position.y);
 	Vec2 actorBXYPosition =  Vec2(actorB->m_position.x, actorB->m_position.y);
 
@@ -254,7 +257,10 @@ void Map::CollideActorsWithMap()
 {
 	for (size_t i = 0; i < m_actors.size(); ++i)
 	{
-		CollideActorWithMap(m_actors[i]);	
+		if (m_actors[i] != nullptr)
+		{
+			CollideActorWithMap(m_actors[i]);	
+		}
 	}
 }
 
@@ -322,35 +328,11 @@ void Map::CollideActorWithMap(Actor* actor)
 
 }
 
-void Map::CreateTestActors()
-{
-	Actor* TestEnemy01 = new Actor(m_game, 0.75f, 0.35f, Vec3(7.5f,8.5f,0.25f), Rgba8::RED, true);
-	TestEnemy01->AddVertsForMe();
-	Actor* TestEnemy02 = new Actor(m_game, 0.75f, 0.35f, Vec3(8.5f,8.5f,0.125f), Rgba8::RED, true);
-	TestEnemy02->AddVertsForMe();
-	Actor* TestEnemy03 = new Actor(m_game, 0.75f, 0.35f, Vec3(9.5f,8.5f,0.0f), Rgba8::RED, true);
-	TestEnemy03->AddVertsForMe();
-	Actor* TestProjectile01 = new Actor(m_game, 0.125f, 0.0625f, Vec3(5.5f,8.5f,0.0f), Rgba8::BLUE, false);
-	TestProjectile01->AddVertsForMe();
-	m_actors.push_back(TestEnemy01);
-	m_actors.push_back(TestEnemy02);
-	m_actors.push_back(TestEnemy03);
-	m_actors.push_back(TestProjectile01);
-
-	if (!m_game->m_player)
-	{
-		m_game->m_player = new PlayerController();
-		m_game->m_player->m_position = Vec3(2.5f, 8.5f, 0.5f);
-	}
-
-	//m_game->m_player->m_testProjectile = TestProjectile01;
-}
-
 void Map::CreateStartupActors()
 {
 	for (int actorIndex = 0; actorIndex < m_definition->m_spawnInfos.size(); ++actorIndex)
 	{
-		Actor* newActor = SpawnActor(*m_definition->m_spawnInfos[actorIndex]);
+ 		Actor* newActor = SpawnActor(*m_definition->m_spawnInfos[actorIndex]);
 		if (AddActorToMap(newActor))
 		{
 			ERROR_RECOVERABLE("ACTOR FAILED TO BE ADDED");
@@ -384,6 +366,18 @@ void Map::CreatePlayerActor()
 
 }
 
+void Map::DeleteDestroyedActors()
+{
+	for (int garbageIndex = 0; garbageIndex < m_actors.size(); ++garbageIndex)
+	{
+		if (m_actors[garbageIndex] != nullptr && m_actors[garbageIndex]->m_isGarbage)
+		{
+			delete m_actors[garbageIndex];													//////////////////////////////////// should this be &?
+			m_actors[garbageIndex] = nullptr;
+		}
+	}
+}
+
 Actor* Map::SpawnActor(const SpawnInfo& spawnInfo)
 {
 	Actor* newActor = new Actor(this, m_game, ActorDefinition::GetByName(spawnInfo.m_actorType));
@@ -391,18 +385,48 @@ Actor* Map::SpawnActor(const SpawnInfo& spawnInfo)
 	newActor->m_orientation = spawnInfo.m_orientation;
 	newActor->m_velocity = spawnInfo.m_velocity;
 
-	int indexForNewActor =(int) m_actors.size();
+	int indexForNewActor = (int) m_actors.size();
+
+	for (int emptyindex = 0; emptyindex < m_actors.size(); ++emptyindex)
+	{
+		if (m_actors[emptyindex] == nullptr)
+		{
+			indexForNewActor = emptyindex;
+			newActor->m_handle = ActorHandle(m_nextActorUID, (unsigned int) indexForNewActor);
+
+			if (newActor->m_aiController != nullptr)
+			{
+				newActor->m_aiController->m_actorHandle = newActor->m_handle;
+				newActor->m_aiController->m_map = this;
+			}
+
+			return newActor;
+		}
+	}
 	
 	newActor->m_handle = ActorHandle(m_nextActorUID, (unsigned int) indexForNewActor);
 	m_nextActorUID += 1;
 	
+	if (newActor->m_aiController != nullptr)
+	{
+		newActor->m_aiController->m_actorHandle = newActor->m_handle;
+		newActor->m_aiController->m_map = this;
+	}
+
 	return newActor;
 }
 
 bool Map::AddActorToMap(Actor* actor)
 {
 	int index = actor->m_handle.GetIndex();
-	m_actors.push_back(actor);
+	if (index != m_actors.size())
+	{
+		m_actors[index] = actor;
+	}
+	else
+	{
+		m_actors.push_back(actor);
+	}
 
 	if (m_actors[index]->m_handle == actor->m_handle)
 	{
@@ -410,10 +434,7 @@ bool Map::AddActorToMap(Actor* actor)
 		{
 			m_spawnpoints.push_back(m_actors[index]->m_handle);
 		}
-
 		return false;
-
-
 	}
 	else
 		return true;
@@ -443,7 +464,10 @@ void Map::Render()
 
 	for (int index = 0; index < m_actors.size(); ++index)
 	{
-		m_actors[index]->Render();
+		if (m_actors[index] != nullptr)
+		{
+			m_actors[index]->Render();
+		}
 	}
 }
 

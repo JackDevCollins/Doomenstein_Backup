@@ -24,6 +24,7 @@ public:
 	void		UpdateCamera();
 
 	void		ToggleCameraMode();
+	void		PossessNextActor();
 
 	void		FreeFlyInput();
 	void		ActorInput();

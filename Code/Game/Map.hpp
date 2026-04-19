@@ -36,15 +36,14 @@ public:
 
 	void Startup();
 
-	void Update(float deltaSeconds);
-	void CollideActors();
-	void CollideActors(Actor* actorA, Actor* actorB);
-	void CollideActorsWithMap();
-	void CollideActorWithMap(Actor* actor);
+	void	Update(float deltaSeconds);
+	void	CollideActors();
+	void	CollideActors(Actor* actorA, Actor* actorB);
+	void	CollideActorsWithMap();
+	void	CollideActorWithMap(Actor* actor);
 
-	void CreateTestActors();
-	void CreateStartupActors();
-	void CreatePlayerActor();
+	void	CreateStartupActors();
+	void	CreatePlayerActor();
 	
 	void	DeleteDestroyedActors();
 	Actor*  SpawnActor(const SpawnInfo& spawnInfo);
@@ -74,8 +73,6 @@ public:
 	VertexBuffer*				m_vertexBuffer = nullptr;
 	IndexBuffer*				m_indexBuffer = nullptr;
 
-
-
 	std::vector<Actor*>			m_actors;
 	unsigned int				m_nextActorUID = 0;
 
@@ -84,5 +81,4 @@ public:
 	float						m_ambientIntensity = 0.35f;
 
 	std::vector<ActorHandle>	m_spawnpoints;
-
 };

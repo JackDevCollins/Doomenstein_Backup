@@ -28,15 +28,16 @@ public:
 
 	void	UpdatePhysics(float deltaSeconds);
 	void	Damage(Actor* damager);
+	void	DeathRattle();
 	void	AddForce(Vec3 force);
 	void	AddImpulse(Vec3 impulse);
 	void	OnCollide();
 	void	OnPossessed();
 	void	OnUnPossessed();
-	void	MoveInDirection();
-	void	TurnInDirection();
+	void	MoveInDirection(Vec3 direction, float speed);
+	void	TurnInDirection(Vec3 goal, float deltaSeconds);
 	void	Attack();
-	void	EquipWeapon();
+	void	EquipWeapon(int weaponNumber);
 
 	virtual Mat44 GetModelToWorldTransform() const;
 	Mat44	GetModelToWorldTransformYawOnly() const;

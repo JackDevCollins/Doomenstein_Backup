@@ -58,10 +58,14 @@ bool ActorDefinition::LoadFromXmlElement(const XmlElement& element)
 
 		if (childName == "Collision")
 		{
-			m_collision_radius		= ParseXmlAttribute(*childElement, "radius", m_collision_radius);;
-			m_height				= ParseXmlAttribute(*childElement, "height", m_height);;
-			m_collidesWithWorld		= ParseXmlAttribute(*childElement, "collidesWithWorld", m_collidesWithWorld);;
-			m_collidesWithActors	= ParseXmlAttribute(*childElement, "collidesWithActors", m_collidesWithActors);;
+			m_collision_radius		= ParseXmlAttribute(*childElement, "radius", m_collision_radius);
+			m_height				= ParseXmlAttribute(*childElement, "height", m_height);
+			m_collidesWithWorld		= ParseXmlAttribute(*childElement, "collidesWithWorld", m_collidesWithWorld);
+			m_collidesWithActors	= ParseXmlAttribute(*childElement, "collidesWithActors", m_collidesWithActors);
+
+			m_damageOnCollide		= ParseXmlAttribute(*childElement, "damageOnCollide", m_damageOnCollide);
+			m_impulseOnCollide		= ParseXmlAttribute(*childElement, "impulseOnCollide", m_impulseOnCollide);
+			m_dieOnCollide			= ParseXmlAttribute(*childElement, "dieOnCollide", m_dieOnCollide);
 		}
 		else if (childName == "Physics")
 		{
@@ -87,11 +91,47 @@ bool ActorDefinition::LoadFromXmlElement(const XmlElement& element)
 			m_shader				= ParseXmlAttribute(*childElement, "shader", m_shader);
 			m_spriteSheet			= ParseXmlAttribute(*childElement, "spriteSheet", m_spriteSheet);
 			m_cellCount				= ParseXmlAttribute(*childElement, "cellCount", m_cellCount);
-		}
 
-		else if (childName == "AnimationGroup")
-		{
+			const XmlElement* grandChildElement = childElement->FirstChildElement();
 
+			while (grandChildElement != nullptr)
+			{
+				std::string grandChildName = grandChildElement->Name();
+
+				if (grandChildName == "AnimationGroup")
+				{
+					animationGroup newAnimationGroup;
+
+					newAnimationGroup.m_name			= ParseXmlAttribute(*grandChildElement, "name", "invalid");
+					newAnimationGroup.m_scaleBySpeed	= ParseXmlAttribute(*grandChildElement, "scaleBySpeed", false);
+					newAnimationGroup.m_secondsPerFrame = ParseXmlAttribute(*grandChildElement, "secondsPerFrame", 0.00f);
+					newAnimationGroup.m_playbackMode	= ParseXmlAttribute(*grandChildElement, "playbackMode", "Loop");
+
+					const XmlElement* greatGrandChildElement = grandChildElement->FirstChildElement();
+
+					while (greatGrandChildElement != nullptr)
+					{
+						std::string greatGrandChildName = greatGrandChildElement->Name();
+
+						if (greatGrandChildName == "Direction")
+						{
+							direction newDirection;
+
+							newDirection.m_vector = ParseXmlAttribute(*grandChildElement, "vector", Vec3(0.f,0.f,0.f));
+							newDirection.m_startFrame = ParseXmlAttribute(*grandChildElement, "startFrame", 0);
+							newDirection.m_endFrame = ParseXmlAttribute(*grandChildElement, "endFrame", 0);
+
+							newAnimationGroup.m_directions.push_back(newDirection);
+
+							greatGrandChildElement = greatGrandChildElement->NextSiblingElement();
+						}
+					}
+
+					m_animationGroups.push_back(newAnimationGroup);
+
+					grandChildElement = grandChildElement->NextSiblingElement();
+				}
+			}
 		}
 
 		else if (childName == "Sounds")
