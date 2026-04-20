@@ -56,6 +56,12 @@ bool WeaponDefinition::LoadFromXmlElement(const XmlElement& element)
 	m_rayDamage			=	 ParseXmlAttribute(element, "rayDamage", m_rayDamage);
 	m_rayImpulse		=	 ParseXmlAttribute(element, "rayImpulse", m_rayImpulse);
 
+	m_meleeCount		=	 ParseXmlAttribute(element, "meleeCount", m_meleeCount);
+	m_meleeArc			=	 ParseXmlAttribute(element, "meleeArc", m_meleeArc);
+	m_meleeRange		=	 ParseXmlAttribute(element, "meleeRange", m_meleeRange);
+	m_meleeDamage		=	 ParseXmlAttribute(element, "meleeDamage", m_meleeDamage);
+	m_meleeImpulse		=	 ParseXmlAttribute(element, "meleeImpulse", m_meleeImpulse);
+
 	const XmlElement* childElement = element.FirstChildElement();
 	while (childElement != nullptr)
 	{

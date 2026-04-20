@@ -13,7 +13,7 @@ public:
 	Weapon(Actor* owner, const WeaponDefinition* weaponDefinition);
 
 	void Fire();
-	Vec3 GetRandomDirectionInCone();
+	Vec3 GetRandomDirectionInCone(const WeaponDefinition m_weaponDefinition);
 
 	Actor*						m_owner;
 	std::string					m_name;

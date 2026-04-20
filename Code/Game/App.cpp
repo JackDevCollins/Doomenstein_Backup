@@ -65,8 +65,6 @@ void App::RunFrame()
 {
 	float deltaSeconds = static_cast<float>(g_systemClock->GetDeltaSeconds());
 
-	AABB2 testSquare = AABB2(Vec2(5,5),Vec2(10,10));
-
 	if (m_isPaused)
 	{
 		deltaSeconds = 0.f;

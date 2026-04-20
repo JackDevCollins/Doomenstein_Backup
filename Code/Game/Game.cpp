@@ -9,6 +9,7 @@
 #include "Game/ActorDefinition.hpp"
 #include "Game/ProjectileActorDefinition.hpp"
 #include "Game/WeaponDefinition.hpp"
+#include "Game/Actor.hpp"
 #include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Renderer/Camera.hpp"
 #include "Engine/Core/Rgba8.hpp"
@@ -44,10 +45,9 @@ Game::Game(App* owner)
 	m_gameTimer01 = new Timer(.01, m_gameClock);
 	m_gameTimer01->Start();
 
-	
-	//m_screenCamera->SetCameraToRenderTransform(Mat44::CAMERA_TO_RENDER);
-	
-	
+	AABB2 screenBounds = AABB2(m_screenCamera->GetOrthoBottomLeft(), m_screenCamera->GetOrthoTopRight());
+	AddVertsForAABB2D(m_deathScreen, screenBounds, Rgba8(255, 255, 255, 250));
+
 	// i could createorgetshader here or just whenever i need it for the first time (render something lit)
 
 	Startup();
@@ -112,6 +112,7 @@ void Game::Render() const
 // 	g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
 // 	g_engine->m_render->BindTexture(m_texture);
 
+	
 
 	if (m_currentGameState == GameState::GAMESTATE_ATTRACT || m_currentGameState == GameState::GAMESTATE_MENU)
 	{
@@ -138,20 +139,12 @@ void Game::Render() const
 	//	For UI elements
 	g_engine->m_render->BeginCamera(*m_screenCamera);
 
+		AABB2 screenBounds = AABB2(m_screenCamera->GetOrthoBottomLeft(), m_screenCamera->GetOrthoTopRight());
+
 		g_engine->m_devConsole->Render(AABB2(Vec2(m_screenCamera->GetOrthoBottomLeft()), Vec2(m_screenCamera->GetOrthoTopRight())));
 		Vec3 position;
 		EulerAngles orientation;
-		bool controlMode = false;
-		std::string controlModeString = "empty";
-		if (m_player)
-		{
-// 			position = m_player->m_position;
-// 			orientation = m_player->m_orientation;
-//			controlMode = m_player->m_controlProjectile;
-		}
-		
-		AABB2 screenBounds = AABB2(m_screenCamera->GetOrthoBottomLeft(), m_screenCamera->GetOrthoTopRight());
-
+	
 		char buffer[32];
 
 		sprintf_s(buffer, "%.2f", g_systemClock->GetTotalSeconds());
@@ -163,15 +156,27 @@ void Game::Render() const
 		sprintf_s(buffer, "%.2f", g_systemClock->GetTimeScale());
 		std::string displayTimeScale = buffer;
 
-		if (controlMode)
+		if (m_player != nullptr)
 		{
-			controlModeString = "[F1] Control Mode: Projectile";
-		}
-		else
-		{
-			controlModeString = "[F1] Control Mode: Camera";
-		}
+			std::string health = "0";
+			if (m_player->GetActor() != nullptr)
+			{
+				sprintf_s(buffer, "%03d", (int)m_player->GetActor()->m_health);
+				health = buffer;
 
+				DebugAddScreenText(" " + health + " ", AABB2(screenBounds.m_mins, Vec2(screenBounds.m_maxs.x, screenBounds.m_mins.y + 100.f)), 100.f, Vec2(.5f, .5f), -1.f, Rgba8::GREEN);		// #ToDo
+
+				if (m_player->GetActor()->m_isDead)
+				{
+					g_engine->m_render->SetModelConstants();
+					g_engine->m_render->SetBlendMode(BlendMode::ALPHA);
+					g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
+					g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
+					g_engine->m_render->BindTexture(nullptr);
+					g_engine->m_render->DrawVertexArray(m_deathScreen);
+				}
+			}
+		}
 // 		sprintf_s(buffer, "%.2f", position.x);
 // 		std::string displayPosx = buffer;
 // 		sprintf_s(buffer, "%.2f", position.y);
@@ -185,12 +190,13 @@ void Game::Render() const
 // 		std::string displayPitch = buffer;
 // 		sprintf_s(buffer, "%.2f", orientation.m_rollDegrees);
 // 		std::string displayRoll = buffer;
-
+		
 // 		DebugAddScreenText("Player position: " + displayPosx + " , " + displayPosy + " , " + 
 // 				displayPosz, AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(0, 1), 0);
 // 		DebugAddScreenText("Camera orientation " + displayYaw + " , " + displayPitch + 
 // 				" , " + displayRoll, AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 40.f),Vec2(screenBounds.m_maxs.x,screenBounds.m_maxs.y - 20.f)),20.f, Vec2(0,1),0);
-		DebugAddScreenText(controlModeString, AABB2(Vec2(screenBounds.m_mins.x + 300.f ,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(0.f,1.f), 0.f);
+		//DebugAddScreenText(controlModeString, AABB2(Vec2(screenBounds.m_mins.x + 300.f ,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(0.f,1.f), 0.f);
+
 		DebugAddScreenText("Time: " + displayTime + " FPS: " + displayFPS + " Scale: " + displayTimeScale, 
 				AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(1.f,0), 0.f);
 		DebugRenderScreen(*m_screenCamera);
@@ -225,9 +231,13 @@ void Game::CheckInputs()
 		{
 			m_player->ToggleCameraMode();
 		}
-		if (g_engine->m_input->WasKeyJustPressed('N'))		// Possess Next Actor
+		if (g_engine->m_input->WasKeyJustPressed('N'))			// Possess Next Actor
 		{
 			m_player->PossessNextActor();
+		}
+		if (g_engine->m_input->WasKeyJustPressed('K'))			// kill yourself NOW
+		{
+			m_player->GetActor()->Damage(nullptr, 200.f);
 		}
 	}
 	
@@ -383,6 +393,10 @@ void Game::EnterState(GameState state)	// state is what you are entering
 {
 	if (state == GAMESTATE_GAME)
 	{
+		if (m_player == nullptr)
+		{
+			m_player = new PlayerController();
+		}
 		if (m_currentMap == nullptr)
 		{
 			std::string mapToLoad = g_globalConfigBlackboard.GetValue("defaultMap", "defaultMap");
@@ -406,8 +420,7 @@ void Game::ExitState(GameState state)	// state is what you are exiting
 	{
 		m_currentMap->~Map();
 		m_currentMap = nullptr;
-// 		m_player->~Player();
-// 		m_player = nullptr;
+
 	}
 }
 
@@ -457,32 +470,7 @@ void Game::RenderAttractMode() const			// #todo add pulsing to start button? shi
 		unsigned char pulse = static_cast<unsigned char>(pulseAmount);
 
 		DebugDrawRing(Vec2(800.f, 400.f), 125.f, 25.f, Rgba8(255, 0, 0, pulse));
-		unsigned char fakeImageData[64] =
-		{
-			// Row 1 (top)
-			0,255,255,255,    // Cyan
-			255,0,255,255,    // Magenta
-			255,255,0,255,    // Yellow
-			0,0,0,255,        // Black
-
-			// Row 2 (checkerboard black / brown)
-			0,0,0,255,        // Black
-			200,100,50,255,   // Brown
-			0,0,0,255,        // Black
-			200,100,50,255,   // Brown
-
-			// Row 3 (checkerboard brown / black)
-			200,100,50,255,   // Brown
-			0,0,0,255,        // Black
-			200,100,50,255,   // Brown
-			0,0,0,255,        // Black
-
-			// Row 4 (bottom)
-			255,0,0,255,      // Red
-			0,255,0,255,      // Green
-			0,0,255,255,      // Blue
-			255,255,255,255   // White
-		};
+		
 		 Vertex tempAABB2verts[6];
 
 		tempAABB2verts[0].m_position = Vec3(0.f, 0.f, 0.f);
@@ -513,12 +501,6 @@ void Game::RenderAttractMode() const			// #todo add pulsing to start button? shi
 
 
 		//////////////////////////////////////////////////////////////////////////////////
-
-	}
-
-	if (m_currentGameState == GAMESTATE_MENU)
-	{
-		
 	}
 
 	g_engine->m_render->EndCamera( attractCamera);

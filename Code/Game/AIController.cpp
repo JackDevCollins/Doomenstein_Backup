@@ -13,35 +13,7 @@ void AIController::Update(float deltaSeconds)
 
 	if (target == nullptr)
 	{
-		Actor* closestEnemy = nullptr;
-		float distanceFromActorSQ = 1000000.f;
-
-		for (int actorIndex = 0; actorIndex < m_map->m_actors.size(); ++actorIndex)
-		{
-			Actor* testActor = m_map->m_actors[actorIndex];
-
-			if (testActor == nullptr) continue;
-
-			if (testActor->m_definition->m_faction != "Marine") continue;
-
-			Vec2 actor2DPos = Vec2(testActor->m_position.x, testActor->m_position.y);
-
-			if (IsPointInsideOrientedSector2D(actor2DPos, Vec2(GetActor()->m_position.x, GetActor()->m_position.y), GetActor()->m_orientation.m_yawDegrees,
-				GetActor()->m_definition->m_sightAngle, GetActor()->m_definition->m_sightRadius))
-			{
-				float distanceSQ = GetDistanceSquared3D(GetActor()->m_position, testActor->m_position);
-				if ( distanceSQ < distanceFromActorSQ)
-				{
-					closestEnemy = testActor;
-					distanceFromActorSQ = distanceSQ;
-				}
-			}
-		}
-		if (closestEnemy != nullptr)
-		{
-			target = closestEnemy;
-		}
-		else return;
+		target = m_map->GetClosestVisibleEnemy(GetActor()->m_handle);
 	}
 
 	Vec3 forward = GetActor()->m_orientation.GetForwardDir_IFwd_JLeft_KUp();
@@ -49,6 +21,17 @@ void AIController::Update(float deltaSeconds)
 	forward = forward.GetNormalized();
 	float speed = 0.f;
 
+	if (target != nullptr)
+	{
+		Vec2 selfVec2Pos = Vec2(GetActor()->m_position.x, GetActor()->m_position.y);
+		Vec2 targetVec2Pos = Vec2(target->m_position.x,target->m_position.y);
+		if (DoDiscsOverlap(selfVec2Pos, GetActor()->m_definition->m_collision_radius * 1.01f, targetVec2Pos, target->m_definition->m_collision_radius * 1.01f))
+		{
+			GetActor()->TurnInDirection(target->m_position, deltaSeconds);
+			GetActor()->Attack();
+			return;
+		}
+		
 	// add an if statement later for if has target or is just wandering
 	//{
 		speed = GetActor()->m_definition->m_runSpeed;
@@ -58,6 +41,8 @@ void AIController::Update(float deltaSeconds)
 // 		speed = GetActor()->m_definition->m_walkSpeed;
 // 	}
 
-	GetActor()->TurnInDirection(target->m_position, deltaSeconds);
-	GetActor()->MoveInDirection(forward, speed);
+		GetActor()->TurnInDirection(target->m_position, deltaSeconds);
+
+		GetActor()->MoveInDirection(forward, speed);
+	}
 }

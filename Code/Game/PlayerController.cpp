@@ -8,6 +8,7 @@
 #include "Engine/Core/Engine.hpp"
 #include "Engine/Renderer/Camera.hpp"
 #include "Engine/Core/Timer.hpp"
+#include "Engine/Renderer/DebugRender.hpp"
 
 PlayerController::PlayerController()
 {
@@ -35,6 +36,8 @@ void PlayerController::UpdateInput()
 
 void PlayerController::UpdateCamera()
 {
+	AABB2 screenBounds = AABB2(m_map->m_game->m_screenCamera->GetOrthoBottomLeft(), m_map->m_game->m_screenCamera->GetOrthoTopRight());
+
 	float tempAspect = g_engine->m_window->m_config.m_clientAspect;
 	if (GetActor()->m_definition->m_faction == "Demon")
 	{
@@ -61,6 +64,7 @@ void PlayerController::UpdateCamera()
 		Vec3 cameraPosition = Vec3(actorPosition.x, actorPosition.y, eyeHeight); 
 		m_camera->SetPosition(cameraPosition);
 		m_camera->SetOrientation(GetActor()->m_orientation);
+
 	}
 	else
 	{

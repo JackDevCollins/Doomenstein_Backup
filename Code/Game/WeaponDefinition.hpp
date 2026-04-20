@@ -4,6 +4,7 @@
 #include <string>
 #include "Engine/Core/XmlUtils.hpp"
 #include "Engine/Math/Vec2.hpp"
+#include "Engine/Math/FloatRange.hpp"
 
 class ActorDefinition;
 
@@ -31,8 +32,15 @@ public:
 	int							m_rayCount;
 	float						m_rayCone;
 	float						m_rayRange;
-	float						m_rayDamage;
+	FloatRange					m_rayDamage;
 	float						m_rayImpulse;
+	// melee
+	int							m_meleeCount;
+	float						m_meleeArc;
+	float						m_meleeRange;
+	FloatRange					m_meleeDamage;
+	float						m_meleeImpulse;
+
 	// visuals
 	std::string					m_HUDshader;
 	std::string					m_baseTexture;

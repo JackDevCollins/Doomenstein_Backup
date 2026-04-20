@@ -52,7 +52,6 @@ int WINAPI WinMain( HINSTANCE applicationInstanceHandle, HINSTANCE, LPSTR comman
 	while (!g_app->IsQuitting())
 	{	
 		g_app->RunFrame();
-		
 	}
 
 	delete g_app;

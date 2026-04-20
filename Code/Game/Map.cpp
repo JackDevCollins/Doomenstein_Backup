@@ -38,11 +38,16 @@ Map::Map(Game* game, const MapDefinition* definition)
 
 Map::~Map()	// #ToDo need to figure out what to release / delete
 {
+	delete m_game->m_player;
+	m_game->m_player = nullptr;
 	m_vertexes.clear();
 	m_vertexBuffer->~VertexBuffer();
 	m_vertexBuffer = nullptr;
 	m_indexBuffer->~IndexBuffer();
 	m_indexBuffer = nullptr;
+	m_spawnpoints.clear();
+	m_actors.clear();
+	m_tiles.clear();
 }
 
 void Map::CreateTiles()
@@ -212,7 +217,12 @@ void Map::CollideActors()
 
 void Map::CollideActors(Actor* actorA, Actor* actorB)
 {
-	
+	if (!actorA->m_definition->m_collidesWithActors || !actorB->m_definition->m_collidesWithActors) return;
+	 
+	if (actorA->m_owner == actorB || actorB->m_owner == actorA) return;
+
+	if (actorA->m_isDead || actorB->m_isDead) return;
+
 	Vec2 actorAXYPosition = Vec2(actorA->m_position.x, actorA->m_position.y);
 	Vec2 actorBXYPosition =  Vec2(actorB->m_position.x, actorB->m_position.y);
 
@@ -233,9 +243,12 @@ void Map::CollideActors(Actor* actorA, Actor* actorB)
 
 			if (horizontalOverlap <= zOverlapAmount)
 			{
-				PushDiscOutOfEachOther2D(actorAXYPosition, actorA->m_physicsRadius, actorBXYPosition, actorB->m_physicsRadius);
-				actorA->m_position = Vec3(actorAXYPosition.x,actorAXYPosition.y, actorA->m_position.z);
-				actorB->m_position = Vec3(actorBXYPosition.x,actorBXYPosition.y, actorB->m_position.z);
+				if (!actorA->m_definition->m_dieOnCollide && !actorB->m_definition->m_dieOnCollide)
+				{
+					PushDiscOutOfEachOther2D(actorAXYPosition, actorA->m_physicsRadius, actorBXYPosition, actorB->m_physicsRadius);
+					actorA->m_position = Vec3(actorAXYPosition.x,actorAXYPosition.y, actorA->m_position.z);
+					actorB->m_position = Vec3(actorBXYPosition.x,actorBXYPosition.y, actorB->m_position.z);
+				}
 			}
 			else
 			{
@@ -251,11 +264,11 @@ void Map::CollideActors(Actor* actorA, Actor* actorB)
 					actorB->m_position.z -= pushAmount;
 				}
 			}
-		
-// 			PushDiscOutOfEachOther3D(actorA->m_position, actorA->m_physicsRadius,
-// 				actorB->m_position, actorB->m_physicsRadius);
+			
 		}
-	}
+		actorA->OnCollide(actorB->m_handle);
+		actorB->OnCollide(actorA->m_handle);
+	}	
 }
 
 void Map::CollideActorsWithMap()
@@ -271,6 +284,9 @@ void Map::CollideActorsWithMap()
 
 void Map::CollideActorWithMap(Actor* actor)
 {
+	if( !actor->m_definition->m_collidesWithWorld ) return;
+
+	bool	collided = false;
 	IntVec2 tileCoordsActorOccupies			= IntVec2(RoundDownToInt(actor->m_position.x),RoundDownToInt(actor->m_position.y));
 	//const Tile*	tileObjectActorOccupies		= GetTile(tileCoordsActorOccupies.x,tileCoordsActorOccupies.y);
 	IntVec2 positionNorth	  = tileCoordsActorOccupies + IntVec2(0, 1);
@@ -293,6 +309,11 @@ void Map::CollideActorWithMap(Actor* actor)
 
 	for (int testNum = 0; testNum < testTiles.size(); ++testNum)
 	{
+		if (testTiles[testNum] == nullptr)
+		{
+			actor->m_isDead;
+			return;
+		}
 		AABB2 XYTileBounds = AABB2(Vec2(testTiles[testNum]->m_bounds.m_mins.x, testTiles[testNum]->m_bounds.m_mins.y),Vec2(testTiles[testNum]->m_bounds.m_maxs.x, testTiles[testNum]->m_bounds.m_maxs.y));
 		Vec2 XYPosition = Vec2(actor->m_position.x,actor->m_position.y);
 
@@ -302,6 +323,7 @@ void Map::CollideActorWithMap(Actor* actor)
 			{
 				PushDiscOutOfFixedAABB2D(XYPosition, actor->m_physicsRadius, XYTileBounds);
 				actor->m_position = Vec3(XYPosition.x, XYPosition.y, actor->m_position.z);
+				collided = true;
 			}
 		}
 		if (testTiles[testNum]->m_tileDefinition->m_isSolid)
@@ -310,6 +332,7 @@ void Map::CollideActorWithMap(Actor* actor)
 			{
 				PushDiscOutOfFixedAABB2D(XYPosition, actor->m_physicsRadius, XYTileBounds);
 				actor->m_position = Vec3(XYPosition.x,XYPosition.y,actor->m_position.z);
+				collided = true;
 			}
 // 			if (IsPointInsideZCylinder3D(testTiles[testNum]->m_bounds.GetNearestPoint(actor->m_position), actor->m_position, actor->m_physicsHeight, actor->m_physicsRadius))
 // 			{
@@ -325,12 +348,23 @@ void Map::CollideActorWithMap(Actor* actor)
 	if (actor->m_position.z < 0.f)
 	{
 		actor->m_position.z = 0.f;
+		collided = true;
 	}
 	if (actor->m_position.z + actor->m_physicsHeight > 1.f)
 	{
 		actor->m_position.z = 1.f - actor->m_physicsHeight;
+		collided = true;
 	}
 
+	if (collided)
+	{
+		actor->m_velocity = Vec3(0.f,0.f,0.f);
+	}
+
+	if (collided && actor->m_definition->m_dieOnCollide)
+	{
+		actor->m_isGarbage = true;
+	}
 }
 
 void Map::CreateStartupActors()
@@ -361,7 +395,6 @@ void Map::CreatePlayerActor()
 	{
 		ERROR_RECOVERABLE("PLAYER ACTOR FAILED TO ADD");
 	}
-
 	m_game->m_player->Possess(newPlayer->m_handle);
 }
 
@@ -385,6 +418,8 @@ Actor* Map::SpawnActor(const SpawnInfo& spawnInfo)
 	newActor->m_velocity = spawnInfo.m_velocity;
 
 	int indexForNewActor = (int) m_actors.size();
+
+	if (indexForNewActor > ActorHandle::MAX_ACTOR_INDEX) ERROR_AND_DIE("TOO MANY ACTORS");
 
 	for (int emptyindex = 0; emptyindex < m_actors.size(); ++emptyindex)
 	{
@@ -452,6 +487,37 @@ Actor* Map::GetActorByHandle(const ActorHandle handle) const
 		return m_actors[index];
 	}
 	return nullptr;
+}
+
+Actor* Map::GetClosestVisibleEnemy(ActorHandle actorHandle)
+{
+	Actor* seekingActor = GetActorByHandle(actorHandle);
+
+	Actor* closestEnemy = nullptr;
+	float distanceFromActorSQ = 1000000.f;
+
+	for (int actorIndex = 0; actorIndex < m_actors.size(); ++actorIndex)
+	{
+		Actor* testActor = m_actors[actorIndex];
+
+		if (testActor == nullptr) continue;
+
+		if (testActor->m_definition->m_faction != "Marine") continue;
+
+		Vec2 actor2DPos = Vec2(testActor->m_position.x, testActor->m_position.y);
+
+		if (IsPointInsideOrientedSector2D(actor2DPos, Vec2(seekingActor->m_position.x, seekingActor->m_position.y), seekingActor->m_orientation.m_yawDegrees,
+			seekingActor->m_definition->m_sightAngle,seekingActor->m_definition->m_sightRadius))
+		{
+			float distanceSQ = GetDistanceSquared3D(seekingActor->m_position, testActor->m_position);
+			if (distanceSQ < distanceFromActorSQ)
+			{
+				closestEnemy = testActor;
+				distanceFromActorSQ = distanceSQ;
+			}
+		}
+	}
+	return closestEnemy;
 }
 
 void Map::Render()
@@ -711,7 +777,7 @@ RaycastResult3D Map::RaycastWorldActors(const Vec3& start, const Vec3& direction
 		float cylinderMinZ = m_actors[index]->m_position.z;
 		float cylinderMaxZ = cylinderMinZ + actor->m_physicsHeight;
 		RaycastResult3D cylinderRaycast = RaycastVsCylinderZ3D(start, direction, distance, cylindercenterXY, cylinderMinZ, cylinderMaxZ, m_actors[index]->m_physicsRadius);
-		if (cylinderRaycast.m_didImpact && cylinderRaycast.m_impactDistance < closestHit.m_impactDistance)
+		if (cylinderRaycast.m_didImpact && cylinderRaycast.m_impactDistance < closestHit.m_impactDistance && !actor->m_isDead)
 		{
 			closestHit = cylinderRaycast;
 			closestHit.m_pointerToImpactedObject = actor;

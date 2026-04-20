@@ -110,6 +110,10 @@ void Actor::Update([[maybe_unused]]float deltaSeconds)
 			m_isGarbage = true;
 		}
 	}
+	if (m_definition->m_dieOnCollide && m_isDead)
+	{
+		m_isGarbage = true;
+	}
 }
 
 void Actor::Render() const
@@ -123,7 +127,23 @@ void Actor::Render() const
 		actorColor.ScaleColor(.4f);
 	}
 
- 	if (m_controller == nullptr || !m_game->m_player->m_cameraMode)
+	if (m_definition->m_name == "PlasmaProjectile")
+	{
+		g_engine->m_render->BindTexture(nullptr);
+		g_engine->m_render->BindShader(nullptr);
+		g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
+		g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
+		g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
+
+		g_engine->m_render->SetModelConstants(GetModelToWorldTransform(), actorColor);
+		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+
+		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);
+		g_engine->m_render->SetModelConstants(GetModelToWorldTransform(), actorColor.GetScaledColor(0.5f) ); 
+		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+	}
+
+ 	if (m_controller == nullptr || !m_game->m_player->m_cameraMode )
  	{
 		g_engine->m_render->BindTexture(nullptr);
 		g_engine->m_render->BindShader(nullptr);
@@ -134,8 +154,8 @@ void Actor::Render() const
 		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor);
 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
 		
-		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);;
-		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), Rgba8(actorColor.r + 10, actorColor.g + 10, actorColor.b + 10)); //Rgba8((m_color.r / (unsigned char)1.5), (m_color.g / (unsigned char)1.5), (m_color.b / (unsigned char)1.5)));
+		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);
+		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor.GetScaledColor(0.5f)); 
 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
 	}
 }
@@ -148,7 +168,7 @@ void Actor::AddVertsForMe()
 		if (m_definition->m_name == "Marine" || m_definition->m_name == "Demon")	// change back after testing
 		{
 			Vec3 test = Vec3(0, 0, m_definition->m_cameraEyeHeight);
- 			AddVertsForCone3D(m_physicsCylinder, test + (Vec3(1,0,0) * m_physicsRadius), test + (Vec3(1,0,0) * .5), .125);
+ 			AddVertsForCone3D(m_physicsCylinder, test + (Vec3(1,0,0) * m_physicsRadius), test + (Vec3(1,0,0) * .5), .125); 
 		}
 	}
 }
@@ -184,11 +204,6 @@ Mat44 Actor::GetModelToWorldTransformYawOnly() const
 	return translationMatrix;
 }
 
-void Actor::TestPojectileInput(Vec3 movement)
-{
-	m_position += movement * 100.;
-}
-
 void Actor::UpdatePhysics(float deltaSeconds)
 {
 	if (m_definition->m_physicsSimulated)
@@ -210,6 +225,8 @@ void Actor::Damage(Actor* damager, float damageAmount)
 {
 	m_health -= damageAmount;
 
+	if (m_definition->m_dieOnCollide) return;
+
 	if (m_definition->m_aiEnabled)
 	{
 		m_aiController->DamagedBy(damager);
@@ -230,10 +247,55 @@ void Actor::AddImpulse(Vec3 impulse)
 	m_velocity += impulse;
 }
 
-void Actor::OnCollide()
+void Actor::OnCollide(ActorHandle collidedWith)
 {
+	Actor* hit = m_map->GetActorByHandle(collidedWith);
 
+	if (hit != nullptr)
+	{
+		if (m_definition->m_damageOnCollide.m_min > 0.f)
+		{
+			hit->Damage(m_owner, RollRandomFloatInRange(m_definition->m_damageOnCollide));
+
+			Vec3 impulseDirection = m_orientation.GetForwardDir_IFwd_JLeft_KUp();
+			hit->AddImpulse(impulseDirection.GetNormalized() * m_definition->m_impulseOnCollide);
+
+			m_isDead = true;
+		}	
+
+		if (m_definition->m_canBePossessed && hit->m_definition->m_canBePossessed)
+		{
+			Vec2 actorAXYPosition = Vec2(m_position.x,m_position.y);
+			Vec2 actorBXYPosition = Vec2(hit->m_position.x,hit->m_position.y);
+
+			PushDiscOutOfEachOther2D(actorAXYPosition, m_physicsRadius, actorBXYPosition, hit->m_physicsRadius);
+			m_position = Vec3(actorAXYPosition.x, actorAXYPosition.y, m_position.z);
+			hit->m_position = Vec3(actorBXYPosition.x, actorBXYPosition.y, hit->m_position.z);
+		}
+	}
 }
+
+// Actor::OnCollide(ActorHandle collidedWith) 
+// {
+// 	Actor* hit = m_map->GetActorByHandle(collidedWith); 
+// 	if (hit != nullptr) 
+// 	{ 
+// 		if (m_definition->m_damageOnCollide.m_min > 0) 
+// 		{ 
+// 			hit->Damage(m_owner, RollRandomFloatInRange (m_definition->m_damageOnCollide.m_min, m_definition->m_damageOnCollide.m_max)); 
+// 		} 
+// 		if (m_definition->m_impulseOnCollide > 0) 
+// 		{ 
+// 			Vec3 impulseDirection = m_orientation.GetForwardDir_IFwd_JLeft_KUp(); 
+// 			hit->AddImpulse(impulseDirection.GetNormalized() * m_definition->m_impulseOnCollide); 
+// 		} 
+// 	} 
+// 	if (m_definition->m_dieOnCollide) 
+// 	{
+// 		m_isDead = true; 
+// 	} 
+//}
+
 
 void Actor::OnPossessed()
 {

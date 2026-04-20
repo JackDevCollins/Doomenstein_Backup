@@ -49,7 +49,7 @@ public:
 	Actor*  SpawnActor(const SpawnInfo& spawnInfo);
 	bool	AddActorToMap(Actor* actor);
 	Actor*  GetActorByHandle(const ActorHandle handle) const;
-	Actor*  GetClosestVisibleEnemy();
+	Actor*  GetClosestVisibleEnemy(ActorHandle actorHandle);
 	void	DebugPossessNext();
 
 	void Render();

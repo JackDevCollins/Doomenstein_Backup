@@ -57,10 +57,9 @@ public:
 	Camera*				m_screenCamera = nullptr;
 	PlayerController*	m_player = nullptr;
 	
+	std::vector<Vertex> m_deathScreen;
 	//-----------------------------------------------------------------------------------------------
 	Map*				m_currentMap = nullptr;
-
-
 
 private:
 	
