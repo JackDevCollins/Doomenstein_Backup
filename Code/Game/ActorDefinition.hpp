@@ -41,6 +41,7 @@ public:
 	float							m_runSpeed				= 0.f;
 	float							m_turnSpeed				= 0.f;
 	float							m_drag					= 0.f;
+	bool							m_isFlying				= false;
 
 	float							m_cameraEyeHeight		= 0.f;
 	float							m_cameraFOV				= 0.f;

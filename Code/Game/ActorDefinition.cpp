@@ -71,6 +71,7 @@ bool ActorDefinition::LoadFromXmlElement(const XmlElement& element)
 		{
 			m_physicsSimulated		= ParseXmlAttribute(*childElement, "simulated", m_physicsSimulated);;
 			m_walkSpeed				= ParseXmlAttribute(*childElement, "walkSpeed", m_walkSpeed);
+			m_isFlying				= ParseXmlAttribute(*childElement, "flying",	m_isFlying);
 			m_runSpeed				= ParseXmlAttribute(*childElement, "runSpeed", m_runSpeed);
 			m_turnSpeed				= ParseXmlAttribute(*childElement, "turnSpeed", m_turnSpeed);
 			m_drag					= ParseXmlAttribute(*childElement, "drag", m_drag);

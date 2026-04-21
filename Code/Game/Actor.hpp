@@ -53,7 +53,6 @@ public:
 	Vec3					m_acceleration		= Vec3(0,0,0);
 	bool					m_isDead			= false;
 	bool					m_isGarbage			= false;
-	bool					m_isFlying			= false;
 	std::vector<Vertex>		m_verts;
 
 

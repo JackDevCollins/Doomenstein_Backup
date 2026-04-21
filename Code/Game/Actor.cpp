@@ -71,7 +71,23 @@ Actor::Actor(Map* map, Game* game, const ActorDefinition* actorDef)
 }	
 Actor::~Actor()
 {
-	
+	delete m_decomposeTimer;
+	m_decomposeTimer = nullptr;
+
+	for (Weapon* weapon : m_inventory) 
+	{
+		if (weapon != nullptr) 
+		{
+			delete weapon;
+		}
+	}
+	m_inventory.clear();
+
+	if (m_aiController != nullptr)
+	{
+		delete m_aiController;
+		m_aiController = nullptr;
+	}
 }
 
 void Actor::Update([[maybe_unused]]float deltaSeconds)		
@@ -208,13 +224,12 @@ void Actor::UpdatePhysics(float deltaSeconds)
 {
 	if (m_definition->m_physicsSimulated)
 	{
-		if (!m_isFlying)
+		AddForce(- m_velocity * m_definition->m_drag);
+
+		if (!m_definition->m_isFlying)
 		{
 			m_velocity = Vec3(m_velocity.x,m_velocity.y,0.f);
 		}
-
-		AddForce(- m_velocity * m_definition->m_drag);
-
 		m_velocity += (m_acceleration * deltaSeconds);
 		m_position += m_velocity * deltaSeconds;
 		m_acceleration = Vec3(0,0,0);
