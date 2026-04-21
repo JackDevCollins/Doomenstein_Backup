@@ -13,6 +13,7 @@
 #include "Engine/Math/MathUtils.hpp"
 #include "Engine/Core/ErrorWarningAssert.hpp"
 #include "Engine/Renderer/Camera.hpp"
+#include "Engine/Renderer/DebugRender.hpp"
 
 
 
@@ -225,50 +226,56 @@ void Map::CollideActors(Actor* actorA, Actor* actorB)
 
 	Vec2 actorAXYPosition = Vec2(actorA->m_position.x, actorA->m_position.y);
 	Vec2 actorBXYPosition =  Vec2(actorB->m_position.x, actorB->m_position.y);
+	FloatRange actorAzRange = FloatRange(actorA->m_position.z, actorA->m_position.z + actorA->m_physicsHeight);
+	FloatRange actorBzRange = FloatRange(actorB->m_position.z, actorB->m_position.z + actorB->m_physicsHeight);
 
-	if (DoDiscsOverlap(actorAXYPosition, actorA->m_physicsRadius,
-		actorBXYPosition, actorB->m_physicsRadius))
+	if(DoZCylindersOverlap3D(actorAXYPosition, actorA->m_definition->m_collision_radius, actorAzRange, actorBXYPosition, actorB->m_definition->m_collision_radius, actorBzRange) )
 	{
-		float aTop = actorA->m_position.z + actorA->m_physicsHeight;
-		float aBottom = actorA->m_position.z;
-		float bTop = actorB->m_position.z + actorB->m_physicsHeight;
-		float bBottom = actorB->m_position.z;
-
-		if (aBottom < bTop && aTop > bBottom) // vertical overlap
-		{
-			float horizontalOverlap = (actorA->m_physicsRadius + actorB->m_physicsRadius) - GetDistance2D(actorAXYPosition,actorBXYPosition);
-			float overlapTop = aTop - bBottom;
-			float overlapBottom = bTop - aBottom;
-			float zOverlapAmount = (overlapTop < overlapBottom) ? overlapTop : overlapBottom;
-
-			if (horizontalOverlap <= zOverlapAmount)
-			{
-				if (!actorA->m_definition->m_dieOnCollide && !actorB->m_definition->m_dieOnCollide)
-				{
-					PushDiscOutOfEachOther2D(actorAXYPosition, actorA->m_physicsRadius, actorBXYPosition, actorB->m_physicsRadius);
-					actorA->m_position = Vec3(actorAXYPosition.x,actorAXYPosition.y, actorA->m_position.z);
-					actorB->m_position = Vec3(actorBXYPosition.x,actorBXYPosition.y, actorB->m_position.z);
-				}
-			}
-			else
-			{
-				float pushAmount = zOverlapAmount * 0.5f;
-				if (aBottom < bBottom) // a below b
-				{
-					actorA->m_position.z -= pushAmount;
-					actorB->m_position.z += pushAmount;
-				}
-				else  // b below a
-				{
-					actorA->m_position.z += pushAmount;
-					actorB->m_position.z -= pushAmount;
-				}
-			}
-			
-		}
+		DebuggerPrintf("COLLIDE");
 		actorA->OnCollide(actorB->m_handle);
 		actorB->OnCollide(actorA->m_handle);
-	}	
+	}
+
+// 	if (DoDiscsOverlap(actorAXYPosition, actorA->m_physicsRadius,
+// 		actorBXYPosition, actorB->m_physicsRadius))
+// 	{
+// 		float aTop = actorA->m_position.z + actorA->m_physicsHeight;
+// 		float aBottom = actorA->m_position.z;
+// 		float bTop = actorB->m_position.z + actorB->m_physicsHeight;
+// 		float bBottom = actorB->m_position.z;
+// 
+// 		if (aBottom < bTop && aTop > bBottom) // vertical overlap
+// 		{
+// 			float horizontalOverlap = (actorA->m_physicsRadius + actorB->m_physicsRadius) - GetDistance2D(actorAXYPosition,actorBXYPosition);
+// 			float overlapTop = aTop - bBottom;
+// 			float overlapBottom = bTop - aBottom;
+// 			float zOverlapAmount = (overlapTop < overlapBottom) ? overlapTop : overlapBottom;
+// 
+// 			if (horizontalOverlap <= zOverlapAmount)
+// 			{
+// 				if (!actorA->m_definition->m_dieOnCollide && !actorB->m_definition->m_dieOnCollide)
+// 				{
+// 					PushDiscOutOfEachOther2D(actorAXYPosition, actorA->m_physicsRadius, actorBXYPosition, actorB->m_physicsRadius);
+// 					actorA->m_position = Vec3(actorAXYPosition.x,actorAXYPosition.y, actorA->m_position.z);
+// 					actorB->m_position = Vec3(actorBXYPosition.x,actorBXYPosition.y, actorB->m_position.z);
+// 				}
+// 			}
+// 			else
+// 			{
+// 				float pushAmount = zOverlapAmount * 0.5f;
+// 				if (aBottom < bBottom) // a below b
+// 				{
+// 					actorA->m_position.z -= pushAmount;
+// 					actorB->m_position.z += pushAmount;
+// 				}
+// 				else  // b below a
+// 				{
+// 					actorA->m_position.z += pushAmount;
+// 					actorB->m_position.z -= pushAmount;
+// 				}
+// 			}
+// 		}
+// 	}	
 }
 
 void Map::CollideActorsWithMap()
@@ -517,7 +524,17 @@ Actor* Map::GetClosestVisibleEnemy(ActorHandle actorHandle)
 			}
 		}
 	}
-	return closestEnemy;
+	if(closestEnemy == nullptr) return nullptr;
+	RaycastResult3D sightlineRaycast = RaycastAll(seekingActor->m_position, closestEnemy->m_position - ( seekingActor->m_position) , seekingActor->m_definition->m_sightRadius) ;
+
+	//DebugAddWorldCylinder(sightlineRaycast.m_rayStartPosition, (sightlineRaycast.m_rayStartPosition + (sightlineRaycast.m_rayDirection * sightlineRaycast.m_rayLength)), 0.01f, .3f, Rgba8::WHITE, Rgba8::WHITE);
+
+	if (sightlineRaycast.m_didImpact && sightlineRaycast.m_impactedObjectID == "Marine")
+	{
+		return closestEnemy;
+	}
+	else
+	return nullptr;
 }
 
 void Map::Render()

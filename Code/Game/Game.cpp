@@ -164,7 +164,7 @@ void Game::Render() const
 				sprintf_s(buffer, "%03d", (int)m_player->GetActor()->m_health);
 				health = buffer;
 
-				DebugAddScreenText(" " + health + " ", AABB2(screenBounds.m_mins, Vec2(screenBounds.m_maxs.x, screenBounds.m_mins.y + 100.f)), 100.f, Vec2(.5f, .5f), -1.f, Rgba8::GREEN);		// #ToDo
+				DebugAddScreenText(" " + health + " ", AABB2(screenBounds.m_mins, Vec2(screenBounds.m_maxs.x, screenBounds.m_mins.y + 100.f)), 100.f, Vec2(.5f, .5f), 0.f, Rgba8::GREEN);		// #ToDo
 
 				if (m_player->GetActor()->m_isDead)
 				{
