@@ -184,8 +184,8 @@ void Map::Update(float deltaSeconds)
 	m_ambientIntensity = GetClampedZeroToOne(m_ambientIntensity);
 	g_engine->m_render->SetLightingConstants(m_sunDirection,m_sunIntensity,m_ambientIntensity);
 
-	CollideActors();
 	CollideActorsWithMap();
+	CollideActors();
 
 	for (int index = 0; index < m_actors.size(); ++index)
 	{
@@ -218,11 +218,18 @@ void Map::CollideActors()
 
 void Map::CollideActors(Actor* actorA, Actor* actorB)
 {
-	if (!actorA->m_definition->m_collidesWithActors || !actorB->m_definition->m_collidesWithActors) return;
-	 
-	if (actorA->m_owner == actorB || actorB->m_owner == actorA) return;
-
-	if (actorA->m_isDead || actorB->m_isDead) return;
+	if (!actorA->m_definition->m_collidesWithActors || !actorB->m_definition->m_collidesWithActors) 
+	{
+		return;
+	}
+	if (actorA->m_owner == actorB || actorB->m_owner == actorA) 
+	{
+		return;
+	}
+	if (actorA->m_isDead || actorB->m_isDead)
+	{
+		return;
+	}
 
 	Vec2 actorAXYPosition = Vec2(actorA->m_position.x, actorA->m_position.y);
 	Vec2 actorBXYPosition =  Vec2(actorB->m_position.x, actorB->m_position.y);
