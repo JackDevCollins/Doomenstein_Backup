@@ -125,7 +125,7 @@ void Game::Render() const
 
 		m_currentMap->Render();
 
-		g_engine->m_render->BindShader(nullptr);
+		//g_engine->m_render->BindShader(nullptr);
 
 		RenderEntities();
 

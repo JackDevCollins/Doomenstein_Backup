@@ -5,7 +5,7 @@
 #include "Game/PlayerController.hpp"
 #include "Game/AIController.hpp"
 #include "Engine/Core/Engine.hpp"
-#include "Engine/Core/Vertex_PCUTBN.hpp"
+#include "Engine/Core/Vertex.hpp"
 #include "Engine/Core/VertexUtils.hpp"
 #include "Engine/Renderer/Image.hpp"
 #include "Engine/Core/Rgba8.hpp"
@@ -105,12 +105,12 @@ void Map::CreateGeometry()
 
 void Map::AddGeometryForWall(const AABB3& bounds, const AABB2& UVs)
 {
-	AddVertsForAABB3D(m_vertexes, m_indexes, bounds, Rgba8::WHITE, UVs);
+	AddVertsForIndexedAABB3D(m_vertexes, m_indexes, bounds, Rgba8::WHITE, UVs);
 }
 
 void Map::AddGeometryForFloor(const AABB3& bounds, const AABB2& UVs)
 {
-	AddVertsForQuad3D(m_vertexes, m_indexes,
+	AddVertsForIndexedQuad3D(m_vertexes, m_indexes,
 		Vec3(bounds.m_maxs.x, bounds.m_mins.y, bounds.m_mins.z),
 		Vec3(bounds.m_maxs.x, bounds.m_maxs.y, bounds.m_mins.z),
 		Vec3(bounds.m_mins.x, bounds.m_maxs.y, bounds.m_mins.z),
@@ -124,7 +124,7 @@ void Map::AddGeometryForCeiling(const AABB3& bounds, const AABB2& UVs)
 // 		Vec3(bounds.m_mins.x, bounds.m_maxs.y, bounds.m_maxs.z),
 // 		Vec3(bounds.m_mins.x, bounds.m_mins.y, bounds.m_maxs.z), Rgba8::RED, UVs);
 
-	AddVertsForQuad3D(m_vertexes, m_indexes, 
+	AddVertsForIndexedQuad3D(m_vertexes, m_indexes, 
 		 Vec3(bounds.m_mins.x, bounds.m_mins.y, bounds.m_maxs.z),
 		 Vec3(bounds.m_mins.x, bounds.m_maxs.y, bounds.m_maxs.z),
 		 Vec3(bounds.m_maxs.x, bounds.m_maxs.y, bounds.m_maxs.z),
@@ -133,9 +133,9 @@ void Map::AddGeometryForCeiling(const AABB3& bounds, const AABB2& UVs)
 
 void Map::CreateBuffers()
 {
-	m_vertexBuffer = g_engine->m_render->CreateVertexBuffer((const unsigned int) m_vertexes.size() * sizeof(Vertex_PCUTBN), sizeof(Vertex_PCUTBN));
+	m_vertexBuffer = g_engine->m_render->CreateVertexBuffer((const unsigned int) m_vertexes.size() * sizeof(Vertex), sizeof(Vertex));
 	m_indexBuffer = g_engine->m_render->CreateIndexBuffer((const unsigned int) m_indexes.size() * sizeof(unsigned int));
-	g_engine->m_render->CopyCPUToGPU(m_vertexes.data(),(const unsigned int) m_vertexes.size() * sizeof(Vertex_PCUTBN), m_vertexBuffer );
+	g_engine->m_render->CopyCPUToGPU(m_vertexes.data(),(const unsigned int) m_vertexes.size() * sizeof(Vertex), m_vertexBuffer );
 	g_engine->m_render->CopyCPUToGPU(m_indexes.data(),(const unsigned int) m_indexes.size() * sizeof(unsigned int), m_indexBuffer);
 }
 

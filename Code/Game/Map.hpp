@@ -11,7 +11,7 @@ struct AABB2;
 struct Vec3;
 class VertexBuffer;
 class IndexBuffer;
-struct Vertex_PCUTBN;
+struct Vertex;
 struct RaycastResult3D;
 class PlayerController;
 class Camera;
@@ -65,7 +65,7 @@ public:
 	const MapDefinition*		m_definition = nullptr;
 	std::vector<Tile>			m_tiles;
 	IntVec2						m_dimensions;
-	std::vector<Vertex_PCUTBN>	m_vertexes;
+	std::vector<Vertex>	m_vertexes;
 	std::vector<unsigned int>	m_indexes;
 	Texture*					m_texture = nullptr;
 	SpriteSheet*				m_terrain = nullptr;
