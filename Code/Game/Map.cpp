@@ -184,9 +184,6 @@ void Map::Update(float deltaSeconds)
 	m_ambientIntensity = GetClampedZeroToOne(m_ambientIntensity);
 	g_engine->m_render->SetLightingConstants(m_sunDirection,m_sunIntensity,m_ambientIntensity);
 
-	CollideActorsWithMap();
-	CollideActors();
-
 	for (int index = 0; index < m_actors.size(); ++index)
 	{
 		if (m_actors[index] != nullptr)
@@ -194,6 +191,9 @@ void Map::Update(float deltaSeconds)
 			m_actors[index]->Update(deltaSeconds);
 		}
 	}
+
+	CollideActors();
+	CollideActorsWithMap();
 
 	DeleteDestroyedActors();
 

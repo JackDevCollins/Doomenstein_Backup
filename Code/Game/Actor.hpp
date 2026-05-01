@@ -24,7 +24,6 @@ public:
 	void  Update(float deltaSeconds);
 	void  Render() const;
 	void  AddVertsForMe();
-	void  TestPojectileInput(Vec3 movement);
 
 	void	UpdatePhysics(float deltaSeconds);
 	void	Damage(Actor* damager, float damageAmount);
@@ -38,11 +37,17 @@ public:
 	void	Attack();
 	void	EquipWeapon(int weaponNumber);
 
+	void	PlayAnimationByName(const char* animationName);
+	void	UpdateAnimation(float deltaSeconds);
+
 	virtual Mat44 GetModelToWorldTransform() const;
 	Mat44	GetModelToWorldTransformYawOnly() const;
 
 public:
 	Game*					m_game				= nullptr;
+	Clock*					m_animationClock	= nullptr;
+
+	SpriteAnimationGroupDefinition* m_currentPlayingAnimationGroup = nullptr;
 
 	ActorHandle				m_handle;
 	const ActorDefinition*	m_definition		= nullptr;
@@ -53,11 +58,12 @@ public:
 	Vec3					m_acceleration		= Vec3(0,0,0);
 	bool					m_isDead			= false;
 	bool					m_isGarbage			= false;
+
 	std::vector<Vertex>		m_verts;
+	std::vector<Weapon*>	m_inventory;
 
 
 	// values that will get modified per instance, all other values get directly from def
-	std::vector<Weapon*>	m_inventory;
 	Weapon*					m_currentWeapon		= nullptr;
 	Actor*					m_owner				= nullptr;
 	float					m_corpseLifetime	= 1.f;	
@@ -71,4 +77,8 @@ public:
 	std::vector<Vertex>		m_physicsCylinder;
 	bool					m_isStatic			= false;
 	bool					m_isRunning			= false;
+
+	Shader*					m_shader			= nullptr;
+	VertexBuffer*			m_vertexBuffer		= nullptr;
+	IndexBuffer*			m_indexBuffer		= nullptr;
 };

@@ -233,6 +233,7 @@
     <ClCompile Include="Map.cpp" />
     <ClCompile Include="MapDefinition.cpp" />
     <ClCompile Include="PlayerController.cpp" />
+    <ClCompile Include="SpriteAnimationGroupDefinition.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="TileDefinition.cpp" />
     <ClCompile Include="Weapon.cpp" />
@@ -251,6 +252,7 @@
     <ClInclude Include="Map.hpp" />
     <ClInclude Include="MapDefinition.hpp" />
     <ClInclude Include="PlayerController.hpp" />
+    <ClInclude Include="SpriteAnimationGroupDefinition.hpp" />
     <ClInclude Include="Tile.hpp" />
     <ClInclude Include="TileDefinition.hpp" />
     <ClInclude Include="Weapon.hpp" />

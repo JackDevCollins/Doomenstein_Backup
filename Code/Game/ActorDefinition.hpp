@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "Game/SpriteAnimationGroupDefinition.hpp"
 #include "Game/GameCommon.hpp"
 #include "Engine/Math/MathUtils.hpp"
 #include "Engine/Core/XmlUtils.hpp"
@@ -62,6 +63,6 @@ public:
 	Strings							m_sounds;
 	Strings							m_inventory;
 
-	std::vector<animationGroup>		m_animationGroups;
+	std::vector<SpriteAnimationGroupDefinition*>		m_animationGroups;
 
 };

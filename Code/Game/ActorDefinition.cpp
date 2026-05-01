@@ -108,37 +108,41 @@ bool ActorDefinition::LoadFromXmlElement(const XmlElement& element)
 
 				if (grandChildName == "AnimationGroup")
 				{
-					animationGroup newAnimationGroup;
+					SpriteAnimationGroupDefinition* newSpriteAnimationGroup = new SpriteAnimationGroupDefinition;
+					newSpriteAnimationGroup->LoadFromXmlElement(*grandChildElement);
+// 					SpriteAnimDefinition newAnimationDefinition;
+// 
+// 					newSpriteAnimationGroup.m_name			= ParseXmlAttribute(*grandChildElement, "name", "invalid");
+// 					newSpriteAnimationGroup.m_scaleBySpeed	= ParseXmlAttribute(*grandChildElement, "scaleBySpeed", false);
+// 
+// 					newAnimationDefinition.m_secondsPerFrame = ParseXmlAttribute(*grandChildElement, "secondsPerFrame", 0.00f);
+// 					newAnimationDefinition.m_playbackMode	= ParseXmlAttribute(*grandChildElement, "playbackMode", "Loop");
+// 
+// 					const XmlElement* greatGrandChildElement = grandChildElement->FirstChildElement();
+// 
+// 					while (greatGrandChildElement != nullptr)
+// 					{
+// 						std::string greatGrandChildName = greatGrandChildElement->Name();
+// 
+// 						if (greatGrandChildName == "Direction")
+// 						{
+// 							direction newDirection;
+// 
+// 							newDirection.m_vector = ParseXmlAttribute(*grandChildElement, "vector", Vec3(0.f,0.f,0.f));
+// 							newDirection.m_startFrame = ParseXmlAttribute(*grandChildElement, "startFrame", 0);
+// 							newDirection.m_endFrame = ParseXmlAttribute(*grandChildElement, "endFrame", 0);
+// 
+// 							newAnimationGroup.m_directions.push_back(newDirection);
+// 
+// 							greatGrandChildElement = greatGrandChildElement->NextSiblingElement();
+// 						}
+// 					}
+// 
+ 					m_animationGroups.push_back(newSpriteAnimationGroup);
 
-					newAnimationGroup.m_name			= ParseXmlAttribute(*grandChildElement, "name", "invalid");
-					newAnimationGroup.m_scaleBySpeed	= ParseXmlAttribute(*grandChildElement, "scaleBySpeed", false);
-					newAnimationGroup.m_secondsPerFrame = ParseXmlAttribute(*grandChildElement, "secondsPerFrame", 0.00f);
-					newAnimationGroup.m_playbackMode	= ParseXmlAttribute(*grandChildElement, "playbackMode", "Loop");
-
-					const XmlElement* greatGrandChildElement = grandChildElement->FirstChildElement();
-
-					while (greatGrandChildElement != nullptr)
-					{
-						std::string greatGrandChildName = greatGrandChildElement->Name();
-
-						if (greatGrandChildName == "Direction")
-						{
-							direction newDirection;
-
-							newDirection.m_vector = ParseXmlAttribute(*grandChildElement, "vector", Vec3(0.f,0.f,0.f));
-							newDirection.m_startFrame = ParseXmlAttribute(*grandChildElement, "startFrame", 0);
-							newDirection.m_endFrame = ParseXmlAttribute(*grandChildElement, "endFrame", 0);
-
-							newAnimationGroup.m_directions.push_back(newDirection);
-
-							greatGrandChildElement = greatGrandChildElement->NextSiblingElement();
-						}
-					}
-
-					m_animationGroups.push_back(newAnimationGroup);
-
-					grandChildElement = grandChildElement->NextSiblingElement();
 				}
+
+				grandChildElement = grandChildElement->NextSiblingElement();
 			}
 		}
 

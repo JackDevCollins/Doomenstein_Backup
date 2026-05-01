@@ -10,6 +10,8 @@
 #include "Engine/Core/VertexUtils.hpp"
 #include "Engine/Core/Timer.hpp"
 #include "Engine/Renderer/Camera.hpp"
+#include "Engine/Math/MathUtils.hpp"
+#include "Engine/Renderer/IndexBuffer.hpp"
 
 Actor::Actor(Game* owner, float physicsHeight, float physicsRadius, Vec3 position, Rgba8 color, bool isStatic)
 	:m_game(owner)
@@ -19,7 +21,7 @@ Actor::Actor(Game* owner, float physicsHeight, float physicsRadius, Vec3 positio
 	,m_color(color)
 	,m_isStatic(isStatic)
 {
-	/*AddVertsForCylinder3D(m_physicsCylinder, m_position, m_position + Vec3(0, 0, physicsHeight), m_physicsRadius, m_color);*/
+	
 	
 }
 
@@ -54,20 +56,37 @@ Actor::Actor(Map* map, Game* game, const ActorDefinition* actorDef)
 	{
 		m_color = Rgba8(73, 188, 13);
 		AddVertsForMe();
+		m_animationClock = new Clock(*m_game->m_gameClock);
 		//m_aiController = new AIController();
 	}
 	if (m_definition->m_name == "Demon")
 	{
 		m_color = Rgba8(255,105,180);
 		AddVertsForMe();
+		m_animationClock = new Clock(*m_game->m_gameClock);
 		m_aiController = new AIController();
 	}
 	if (m_definition->m_name == "PlasmaProjectile")
 	{
 		m_color = Rgba8::BLUE;
+		m_animationClock = new Clock(*m_game->m_gameClock);
 		AddVertsForMe();
 	}
 
+	if (m_definition->m_shader != "invalid")
+	{
+		if (m_definition->m_renderLit)
+		{
+			m_shader = g_engine->m_render->CreateOrGetShader(m_definition->m_shader.c_str(), VertexType::VERTEX_PCUTBN);
+		}
+		else
+		{
+			m_shader = g_engine->m_render->CreateOrGetShader(m_definition->m_shader.c_str(), VertexType::VERTEX);
+		}
+	}
+
+	m_vertexBuffer = g_engine->m_render->CreateVertexBuffer(25, sizeof(Vertex));
+	m_indexBuffer = g_engine->m_render->CreateIndexBuffer(sizeof(unsigned int));
 }	
 Actor::~Actor()
 {
@@ -88,16 +107,19 @@ Actor::~Actor()
 		delete m_aiController;
 		m_aiController = nullptr;
 	}
+	if (m_animationClock != nullptr)
+	{
+		delete m_animationClock;
+		m_animationClock = nullptr;
+	}
+
+	delete m_indexBuffer;
+	delete m_vertexBuffer;
 }
 
 void Actor::Update([[maybe_unused]]float deltaSeconds)		
 {
 	if(m_definition->m_name == "SpawnPoint") return;
-
-	if (m_controller != nullptr && static_cast<PlayerController*>(m_controller) == m_game->m_player && !m_isDead)
-	{
-		static_cast<PlayerController*>(m_controller)->UpdateInput();
-	}
 
 	else if (!m_isDead)
 	{
@@ -106,12 +128,14 @@ void Actor::Update([[maybe_unused]]float deltaSeconds)
 			m_aiController->Update(deltaSeconds);
 		}
 	}
-	if (m_controller != nullptr && static_cast<PlayerController*>(m_controller) == m_game->m_player)
-	{
-		static_cast<PlayerController*>(m_controller)->UpdateCamera();
-	}
+
+// update animation //
+	UpdateAnimation(deltaSeconds);
 
 	UpdatePhysics(deltaSeconds);
+
+
+// update audio // 
 
 	if (m_health <= 0)
 	{	
@@ -136,6 +160,64 @@ void Actor::Render() const
 {
 	if(!m_definition->m_isVisible) return;
 
+	if (m_controller == m_game->m_player && m_game->m_player->m_cameraMode) return;
+
+	Mat44 playerTransform = m_map->m_game->m_player->GetModelToWorldTransform();
+
+	Mat44 billboardMatrix;
+	if (m_definition->m_billboardType == "WorldUpFacing") billboardMatrix = GetBillboardTransform(BillboardType::WORLD_UP_FACING, playerTransform, m_position);			// for demons and marines
+	if (m_definition->m_billboardType == "WorldUpOpposing") billboardMatrix = GetBillboardTransform(BillboardType::WORLD_UP_OPPOSING, playerTransform, m_position);		// for hit effects
+	if (m_definition->m_billboardType == "None") billboardMatrix = GetBillboardTransform(BillboardType::NONE, playerTransform, m_position);						// screenspace like HUD and weapons
+	if (m_definition->m_billboardType == "FullOpposing") billboardMatrix = GetBillboardTransform(BillboardType::FULL_OPPOSING, playerTransform, m_position);	// for plasma projectile
+
+	std::vector<Vertex> spriteQuadVerts;
+	std::vector<unsigned int> spriteIndexes;
+	Vec3 topLeft = Vec3(m_position.x, m_position.y - m_definition->m_visualsSize.x, m_position.z + m_definition->m_visualsSize.y);
+	Vec3 bottomRight = Vec3(m_position.x, m_position.y + m_definition->m_visualsSize.x, m_position.z - m_definition->m_visualsSize.y);
+	Vec3 bottomLeft = Vec3(topLeft.x, topLeft.y, bottomRight.z);
+	Vec3 topRight = Vec3(bottomRight.x, bottomRight.y, topLeft.z);
+
+	// get sprite based on direction
+	//camera to actor ggte vector quantitty. run that through the actor's world transform inverse transform, that is the directino you plug into the get anim for direction funciton.
+	Vec3 directionFromCameraToActor = m_position - m_game->m_player->m_camera->GetPosition();
+	Vec3 NormalizedCamtoActDirection = directionFromCameraToActor.GetNormalized();
+	
+	Mat44 actorSelfWorldTransform;
+	if (m_definition->m_name == "PlasmaProjectile")
+	{
+		actorSelfWorldTransform = GetModelToWorldTransform();
+	}
+	else
+	{
+		actorSelfWorldTransform = GetModelToWorldTransformYawOnly();
+	}
+	actorSelfWorldTransform = actorSelfWorldTransform.GetOrthonormalInverse();
+	Vec3 directionToPlugIntoAnimationDirectionFunction = actorSelfWorldTransform.TransformVectorQuantity3D(NormalizedCamtoActDirection);
+
+	const SpriteAnimDefinition& spriteDirectionDef = m_currentPlayingAnimationGroup->GetAnimationForDirection(directionToPlugIntoAnimationDirectionFunction);
+	SpriteDefinition const& spriteAtTimeInDirection = spriteDirectionDef.GetSpriteDefAtTime(m_animationClock->GetTotalSeconds());
+	AABB2 UVs = spriteAtTimeInDirection.GetUVs();
+	
+	if (m_definition->m_renderRounded)
+	{
+		AddVertsForRoundedQuad3D(spriteQuadVerts, spriteIndexes, topLeft, bottomLeft, bottomRight, topRight, m_color, UVs);
+	}
+	else
+	{
+		AddVertsForQuad3D(spriteQuadVerts, bottomLeft, bottomRight, topRight, topLeft, m_color, UVs);
+	}
+	//Translate by the inverse pivot times the size to center the quad on its local origin.
+
+	//first attempt//
+//	AABB2 actorBounds = AABB2(Vec2::ZERO,m_definition->m_visualsSize);
+//	actorBounds.Translate(-m_definition->m_pivot * m_definition->m_visualsSize);
+// 	std::vector<Vertex> spriteVerts;
+// 	std::vector<unsigned int> spriteIndexes;
+// 	AddVertsForRoundedQuad3D(spriteVerts, spriteIndexes, Vec3(0.f, actorBounds.m_mins.x, actorBounds.m_maxs.y),
+// 								Vec3(0.f, actorBounds.m_mins.x, actorBounds.m_mins.y),
+// 								Vec3(0.f, actorBounds.m_maxs.x, actorBounds.m_mins.y),
+// 								Vec3(0.f, actorBounds.m_maxs.x, actorBounds.m_maxs.y));
+
 	Rgba8 actorColor = m_color;
 
 	if (m_isDead)
@@ -152,28 +234,51 @@ void Actor::Render() const
 		g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
 
 		g_engine->m_render->SetModelConstants(GetModelToWorldTransform(), actorColor);
-		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+		//g_engine->m_render->DrawVertexArray(m_physicsCylinder);
 
 		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);
 		g_engine->m_render->SetModelConstants(GetModelToWorldTransform(), actorColor.GetScaledColor(0.5f) ); 
 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
 	}
 
- 	if (m_controller == nullptr || !m_game->m_player->m_cameraMode )
- 	{
-		g_engine->m_render->BindTexture(nullptr);
-		g_engine->m_render->BindShader(nullptr);
+//  	if (m_controller == nullptr || !m_game->m_player->m_cameraMode )
+//  	{
+// 		g_engine->m_render->BindTexture(nullptr);
+// 		g_engine->m_render->BindShader(nullptr);
+// 		g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
+// 		g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
+// 		g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
+// 
+// 		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor);
+// 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+// 		
+// 		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);
+// 		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor.GetScaledColor(0.5f)); 
+// 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+// 	}
+
+	else
+	{
+		g_engine->m_render->BindTexture(m_currentPlayingAnimationGroup->m_spriteSheet->GetTexture());
+		//g_engine->m_render->BindTexture(nullptr);
+		
+		g_engine->m_render->BindShader(m_shader);
 		g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
 		g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
 		g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
+		//g_engine->m_render->SetModelConstants();
+		g_engine->m_render->SetModelConstants(actorSelfWorldTransform, actorColor);
+		//g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor);
+		//g_engine->m_render->DrawVertexArray(m_physicsCylinder);
 
-		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor);
-		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
-		
-		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);
-		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor.GetScaledColor(0.5f)); 
-		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+		g_engine->m_render->CopyCPUToGPU(spriteQuadVerts.data(), (const unsigned int)spriteQuadVerts.size() * sizeof(Vertex), m_vertexBuffer);
+		g_engine->m_render->CopyCPUToGPU(spriteIndexes.data(), (const unsigned int)spriteIndexes.size() * sizeof(unsigned int), m_indexBuffer);
+
+		g_engine->m_render->DrawIndexedVertexBuffer(m_vertexBuffer, m_indexBuffer, m_indexBuffer->GetCount());
 	}
+
+
+
 }
 
 void Actor::AddVertsForMe()
@@ -197,6 +302,39 @@ void Actor::Attack()
 void Actor::EquipWeapon(int weaponNumber)
 {
 	m_currentWeapon = m_inventory[weaponNumber];
+}
+
+
+void Actor::PlayAnimationByName(const char* animationName)
+{
+	for (int index = 0; index < m_definition->m_animationGroups.size(); ++index)
+	{
+		if (m_definition->m_animationGroups[index]->m_name == animationName)
+		{
+			m_currentPlayingAnimationGroup = m_definition->m_animationGroups[index];
+			m_animationClock->Reset();
+		}
+	}
+}
+
+void Actor::UpdateAnimation(float deltaSeconds)
+{
+	if (m_currentPlayingAnimationGroup == nullptr)
+	{
+		m_currentPlayingAnimationGroup = m_definition->m_animationGroups[0];
+	}
+
+	if (m_currentPlayingAnimationGroup->GetDuration() < m_animationClock->GetTotalSeconds())
+	{
+		m_currentPlayingAnimationGroup = m_definition->m_animationGroups[0];
+		m_animationClock->Reset();
+	}
+
+	if (m_currentPlayingAnimationGroup->m_scaleBySpeed && m_animationClock->GetTimeScale() == 1.0)
+	{
+		m_animationClock->SetTimeScale(m_velocity.GetLength() / m_definition->m_runSpeed);
+	}
+
 }
 
 Mat44 Actor::GetModelToWorldTransform() const

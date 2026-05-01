@@ -87,15 +87,16 @@ void Game::Update(float deltaSeconds)
 	{
 		UpdateAttractMode( deltaSeconds );
 	}
-	if (m_currentMap)
-	{
-		m_currentMap->Update(static_cast<float>(m_gameClock->GetDeltaSeconds()));
-	}
 	
 	
 	CheckInputs();
 
 	UpdateEntities(deltaSeconds);
+
+	if (m_currentMap)
+	{
+		m_currentMap->Update(static_cast<float>(m_gameClock->GetDeltaSeconds()));
+	}
 
 	UpdateCameras(deltaSeconds);
 
@@ -366,10 +367,11 @@ void Game::RenderText() const
 
 void Game::UpdateEntities([[maybe_unused]]float deltaSeconds)
 {
-// 	if (m_player)
-// 	{
-// 		m_player->Update(deltaSeconds);
-// 	}
+	if (m_player && m_player->m_actorHandle != ActorHandle::INVALID)
+	{
+		m_player->UpdateInput();
+		m_player->UpdateCamera();
+ 	}
 }
 
 void Game::UpdateCameras([[maybe_unused]]float deltaSeconds)
