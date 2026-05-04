@@ -119,7 +119,7 @@ bool WeaponDefinition::LoadFromXmlElement(const XmlElement& element)
 
 					grandChildElement = grandChildElement->NextSiblingElement();
 				}
-			}
+ 			}
 		}
 
 		else if (childName == "Sounds")

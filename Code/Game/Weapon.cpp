@@ -47,7 +47,7 @@ bool Weapon::Fire()
 
 			if (bulletRaycast.m_didImpact)
 			{
-				if (bulletRaycast.m_impactedObjectID == "Demon")
+				if (bulletRaycast.m_impactedObjectID == "Demon" || bulletRaycast.m_impactedObjectID == "Marine")
 				{
 					static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->Damage(m_owner, RollRandomFloatInRange(m_definition->m_rayDamage));
 					static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->AddImpulse( - bulletRaycast.m_impactNormal * m_definition->m_rayImpulse);
@@ -63,7 +63,16 @@ bool Weapon::Fire()
 					m_owner->m_map->AddActorToMap(spawnedImpact);
 
 				}
+				else
+				{
+					SpawnInfo impactSpawninfo;
+					impactSpawninfo.m_actorType = "BulletHit";
+					impactSpawninfo.m_position = bulletRaycast.m_impactPosition;
+					Actor* spawnedImpact = m_owner->m_map->SpawnActor(impactSpawninfo);
+					m_owner->m_map->AddActorToMap(spawnedImpact);
+				}
 			}
+		
 // 			DebugAddWorldCylinder(bulletRaycast.m_rayStartPosition, (bulletRaycast.m_rayStartPosition + (bulletRaycast.m_rayDirection * bulletRaycast.m_rayLength)), 0.01f, 1.f, Rgba8::WHITE, Rgba8::WHITE, DebugRenderMode::X_RAY);
 // 			if (bulletRaycast.m_didImpact)
 // 			{
@@ -75,7 +84,8 @@ bool Weapon::Fire()
 		if (m_name == "PlasmaRifle")
 		{
 			// replace getfwdIJK with origin to random point in cone normalized 
-			
+			m_fireSound = g_engine->m_audio->CreateOrGetSound(m_definition->GetSoundByName("Fire").c_str());
+			g_engine->m_audio->StartSound(m_fireSound);
 			SpawnInfo projectileSpawnInfo;
 			projectileSpawnInfo.m_actorType = m_definition->m_projectileActor;
 			projectileSpawnInfo.m_position = Vec3(m_owner->m_position.x, m_owner->m_position.y, m_owner->m_definition->m_cameraEyeHeight * .75f );
@@ -141,7 +151,16 @@ Vec3 Weapon::GetRandomDirectionInCone(const WeaponDefinition definition)
 }
 
 void Weapon::Update()
-{
+{	
+	if (m_definition->m_name == "PlasmaRifle" && g_engine->m_input->WasKeyJustReleased(KEYCODE_LEFT_MOUSE))
+	{
+		if (m_currentPlayingAnimation != m_definition->m_animations[2])
+		{
+			m_currentPlayingAnimation = m_definition->m_animations[2];
+			m_animationClock->Reset();
+		}
+	}
+
 	if (m_animationClock->GetTotalSeconds() > (m_definition->m_animations[1]->m_endSpriteIndex) * m_definition->m_animations[1]->m_secondsPerFrame && m_animationClock->GetTotalSeconds() != 0.0)
 	{
 		m_currentPlayingAnimation = m_definition->m_animations[0];

@@ -177,11 +177,6 @@ void Actor::Render() const
 
 		if (m_controller == player && player->m_cameraMode) return;
 
-		if (m_currentPlayingAnimationGroup->m_name == "Death")
-		{
-			DebuggerPrintf("death");
-		}
-
 		Mat44 playerTransform = player->GetModelToWorldTransform();
 
 		if (player->m_cameraMode)
@@ -234,7 +229,8 @@ void Actor::Render() const
 		}
 		else
 		{
-			AddVertsForQuad3D(spriteQuadVerts, bottomLeft, bottomRight, topRight, topLeft, Rgba8::WHITE, UVs);
+			//AddVertsForQuad3D(spriteQuadVerts, bottomLeft, bottomRight, topRight, topLeft, Rgba8::WHITE, UVs);
+			AddVertsForQuad3D(spriteQuadVerts,    topLeft,bottomLeft,bottomRight,topRight, Rgba8::WHITE, UVs);
 		}
 
 
@@ -245,7 +241,25 @@ void Actor::Render() const
 			actorColor.ScaleColor(.4f);
 		}
 
-		if (m_definition->m_name == "PlasmaProjectile" || m_definition->m_name == "BloodSplatter")
+		if (m_definition->m_name == "BloodSplatter" || m_definition->m_name == "BulletHit")
+		{
+			g_engine->m_render->BindTexture(m_currentPlayingAnimationGroup->m_spriteSheet->GetTexture());
+			g_engine->m_render->BindShader(g_engine->m_render->CreateOrGetShader(m_definition->m_shader.c_str()));
+			g_engine->m_render->SetBlendMode(BlendMode::ALPHA);
+			g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
+			g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
+
+			g_engine->m_render->SetModelConstants(billboardMatrix);
+
+			g_engine->m_render->CopyCPUToGPU(spriteQuadVerts.data(), (const unsigned int)spriteQuadVerts.size() * sizeof(Vertex), m_vertexBuffer);
+			g_engine->m_render->CopyCPUToGPU(spriteIndexes.data(), (const unsigned int)spriteIndexes.size() * sizeof(unsigned int), m_indexBuffer);
+
+			g_engine->m_render->DrawVertexBuffer(m_vertexBuffer, m_vertexBuffer->GetCount());
+
+		}
+
+
+		if (m_definition->m_name == "PlasmaProjectile")
 		{
 			//g_engine->m_render->BindTexture(g_engine->m_render->CreateOrGetTextureFromFile("Data/Images/Projectile_BloodSplatter.png"))
 			g_engine->m_render->BindTexture(m_currentPlayingAnimationGroup->m_spriteSheet->GetTexture());

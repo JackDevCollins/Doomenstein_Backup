@@ -27,8 +27,6 @@ public:
 	void SetIsQuitting();
 	bool IsQuitting() const;
 	EngineConfig CreateEngineConfig();
-	
-
 
 public:
 	

@@ -157,7 +157,6 @@ void Game::Render() const
 
 		AABB2 screenBounds = AABB2(m_screenCamera->GetOrthoBottomLeft(), m_screenCamera->GetOrthoTopRight());
 
-		g_engine->m_devConsole->Render(AABB2(Vec2(m_screenCamera->GetOrthoBottomLeft()), Vec2(m_screenCamera->GetOrthoTopRight())));
 		Vec3 position;
 		EulerAngles orientation;
 	
@@ -200,6 +199,8 @@ void Game::Render() const
 		DebugAddScreenText("GameTime: " + displayTime + " FPS: " + displayFPS + " Scale: " + displayTimeScale, 
 				AABB2(Vec2(screenBounds.m_mins.x,screenBounds.m_maxs.y - 20.f),screenBounds.m_maxs), 20.f, Vec2(1.f,0), 0.f);
 		DebugRenderScreen(*m_screenCamera);
+
+		g_engine->m_devConsole->Render(AABB2(Vec2(m_screenCamera->GetOrthoBottomLeft()), Vec2(m_screenCamera->GetOrthoTopRight())));
 
 	g_engine->m_render->EndCamera(*m_screenCamera);
 }
@@ -622,6 +623,7 @@ void Game::RenderWeapon() const
 	{
 		if (player != nullptr)
 		{
+			if (!player->m_cameraMode) return;
 			Weapon* currentweapon = player->GetActor()->m_currentWeapon;
 			AABB2 playerViewport = player->m_camera->GetViewport();
 
