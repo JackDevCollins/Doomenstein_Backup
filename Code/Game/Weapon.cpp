@@ -29,7 +29,7 @@ bool Weapon::Fire()
 	if (m_weaponTimer->HasPeriodElapsed() || m_weaponTimer->IsStopped())
 	{
 		m_weaponTimer->Start();
-		if (m_currentPlayingAnimation != m_definition->m_animations[1])
+		if (m_currentPlayingAnimation!= nullptr && m_currentPlayingAnimation != m_definition->m_animations[1])
 		{
 			m_currentPlayingAnimation = m_definition->m_animations[1];
 			m_animationClock->Reset();
@@ -37,7 +37,8 @@ bool Weapon::Fire()
 		if (m_name == "Pistol")
 		{	
 			// replace getfwdIJK with origin to random point in cone normalized 
-			
+			m_fireSound = g_engine->m_audio->CreateOrGetSound(m_definition->GetSoundByName("Fire").c_str());
+			g_engine->m_audio->StartSound(m_fireSound);
 			RaycastResult3D bulletRaycast = m_owner->m_map->RaycastAll(
 			Vec3(m_owner->m_position.x, m_owner->m_position.y, m_owner->m_definition->m_cameraEyeHeight * .75f ) + 
 			(static_cast<PlayerController*>(m_owner->m_controller)->m_camera->GetOrientation().GetForwardDir_IFwd_JLeft_KUp().GetNormalized() * (m_owner->m_physicsRadius + .01f)),

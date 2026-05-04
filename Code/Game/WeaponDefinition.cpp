@@ -30,7 +30,18 @@ void WeaponDefinition::ClearDefinitions()
 {
 	s_definitions.clear();
 }
-
+std::string WeaponDefinition::GetSoundByName(const std::string& name) const
+{
+	for (int index = 0; index < m_sounds.size(); ++index)
+	{
+		Strings result = SplitStringOnDelimiter(m_sounds[index], '+');
+		if ( result[0] == name )
+		{
+			return result[1];
+		}
+	}
+	return "None found";
+}
 const WeaponDefinition* WeaponDefinition::GetByName(const std::string& name)
 {
 	for (int index = 0; index < s_definitions.size(); ++index)

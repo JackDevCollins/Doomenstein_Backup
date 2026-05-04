@@ -41,8 +41,8 @@ void AIController::Update(float deltaSeconds)
 // 		speed = GetActor()->m_definition->m_walkSpeed;
 // 	}
 
-		//GetActor()->TurnInDirection(target->m_position, deltaSeconds);
+		GetActor()->TurnInDirection(target->m_position, deltaSeconds);
 
-		//GetActor()->MoveInDirection(forward, speed);
+		GetActor()->MoveInDirection(forward, speed);
 	}
 }

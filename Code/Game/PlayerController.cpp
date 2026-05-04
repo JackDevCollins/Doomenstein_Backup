@@ -45,13 +45,13 @@ void PlayerController::UpdateCamera()
 	{
 		if (m_playerNum == 1)
 		{
-			screenBounds.m_mins.y = 0.f;
-			screenBounds.m_maxs.y = screenHalfHeight;
+			screenBounds.m_mins.y = screenHalfHeight;
+			screenBounds.m_maxs.y = screenHeight;
 		}
 		if (m_playerNum == 2)
 		{
-			screenBounds.m_mins.y = screenHalfHeight;
-			screenBounds.m_maxs.y = screenHeight;
+			screenBounds.m_mins.y = 0.f;
+			screenBounds.m_maxs.y = screenHalfHeight;
 		}
 		Vec2 dimensions = screenBounds.GetDimensions();
 		aspect = dimensions.x / dimensions.y;
@@ -199,110 +199,195 @@ void PlayerController::ActorInput()
 	Vec2 moveInputRight = controller.GetRightStick().GetPosition();
 
 	if (GetActor() == nullptr) return;
-
-	if (g_engine->m_input->m_cursorState.m_cursorClientDelta != Vec2(0.f, 0.f))
-	{	
-		GetActor()->m_orientation.m_yawDegrees = GetActor()->m_orientation.m_yawDegrees + (g_engine->m_input->m_cursorState.m_cursorClientDelta.x * 0.075f);
-		
-		GetActor()->m_orientation.m_pitchDegrees = GetActor()->m_orientation.m_pitchDegrees - (g_engine->m_input->m_cursorState.m_cursorClientDelta.y * 0.075f);
-		if (GetActor()->m_orientation.m_pitchDegrees > 90.f)  GetActor()->m_orientation.m_pitchDegrees = 89.9f;
-		if (GetActor()->m_orientation.m_pitchDegrees < -90.f) GetActor()->m_orientation.m_pitchDegrees = -89.9f;
-
-		m_orientation = GetActor()->m_orientation;
-	}
-
-	if (g_engine->m_input->WasKeyJustPressed('P'))		// Pause the game
+	if (m_isKeyboardPlayer)		// KEYBOARD CONTROLS
 	{
-		m_map->m_game->m_gameClock->TogglePause();
-	}
-
-
-	///// WEAPON CONTROLS//////
-
-	if (g_engine->m_input->IsKeyDown(KEYCODE_LEFT_MOUSE) || g_engine->m_input->GetController(0).GetRightTrigger() > 0.1)
-	{
-		if (GetActor()->m_currentWeapon != nullptr)
+		if (g_engine->m_input->m_cursorState.m_cursorClientDelta != Vec2(0.f, 0.f))
 		{
-			GetActor()->m_currentWeapon->Fire();	
+			GetActor()->m_orientation.m_yawDegrees = GetActor()->m_orientation.m_yawDegrees + (g_engine->m_input->m_cursorState.m_cursorClientDelta.x * 0.075f);
+
+			GetActor()->m_orientation.m_pitchDegrees = GetActor()->m_orientation.m_pitchDegrees - (g_engine->m_input->m_cursorState.m_cursorClientDelta.y * 0.075f);
+			if (GetActor()->m_orientation.m_pitchDegrees > 90.f)  GetActor()->m_orientation.m_pitchDegrees = 89.9f;
+			if (GetActor()->m_orientation.m_pitchDegrees < -90.f) GetActor()->m_orientation.m_pitchDegrees = -89.9f;
+
+			m_orientation = GetActor()->m_orientation;
 		}
-	}
-
-	if (g_engine->m_input->WasKeyJustPressed('1') || g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::X))
-	{
-		if (GetActor()->m_inventory.size() > 1)
+		if (g_engine->m_input->WasKeyJustPressed('P'))		// Pause the game
 		{
-			GetActor()->EquipWeapon(0);
+			m_map->m_game->m_gameClock->TogglePause();
 		}
-	}
-	if (g_engine->m_input->WasKeyJustPressed('2') || g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::Y))
-	{
-		if (GetActor()->m_inventory.size() > 1)
+		if (g_engine->m_input->IsKeyDown(KEYCODE_LEFT_MOUSE))
 		{
-			GetActor()->EquipWeapon(1);
-		}
-	}
-	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_LEFTARROW) || g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::D_Pad_Down))
-	{
-		int currentIndex = 0; 
-		for (int invIndex = 0; invIndex < GetActor()->m_inventory.size(); ++invIndex)
-		{
-			if (GetActor()->m_inventory[invIndex]->m_name == GetActor()->m_currentWeapon->m_name)
+			if (GetActor()->m_currentWeapon != nullptr)
 			{
-				currentIndex = invIndex;
+				GetActor()->m_currentWeapon->Fire();
 			}
 		}
-		int newIndex = (currentIndex - 1) % GetActor()->m_inventory.size();
-		GetActor()->EquipWeapon(newIndex);
-	}
-	if (g_engine->m_input->WasKeyJustPressed(KEYCODE_RIGHTARROW) || g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::D_Pad_Up))
-	{
-		int currentIndex = 0;
-		for (int invIndex = 0; invIndex < GetActor()->m_inventory.size(); ++invIndex)
+		if (g_engine->m_input->WasKeyJustPressed('1') )
 		{
-			if (GetActor()->m_inventory[invIndex]->m_name == GetActor()->m_currentWeapon->m_name)
+			if (GetActor()->m_inventory.size() > 1)
 			{
-				currentIndex = invIndex;
+				GetActor()->EquipWeapon(0);
 			}
 		}
-		int newIndex = (currentIndex + 1) % GetActor()->m_inventory.size();
-		GetActor()->EquipWeapon(newIndex);
+		if (g_engine->m_input->WasKeyJustPressed('2') )
+		{
+			if (GetActor()->m_inventory.size() > 1)
+			{
+				GetActor()->EquipWeapon(1);
+			}
+		}
+		if (g_engine->m_input->WasKeyJustPressed(KEYCODE_LEFTARROW) )
+		{
+			int currentIndex = 0;
+			for (int invIndex = 0; invIndex < GetActor()->m_inventory.size(); ++invIndex)
+			{
+				if (GetActor()->m_inventory[invIndex]->m_name == GetActor()->m_currentWeapon->m_name)
+				{
+					currentIndex = invIndex;
+				}
+			}
+			int newIndex = (currentIndex - 1) % GetActor()->m_inventory.size();
+			GetActor()->EquipWeapon(newIndex);
+		}
+		if (g_engine->m_input->WasKeyJustPressed(KEYCODE_RIGHTARROW) )
+		{
+			int currentIndex = 0;
+			for (int invIndex = 0; invIndex < GetActor()->m_inventory.size(); ++invIndex)
+			{
+				if (GetActor()->m_inventory[invIndex]->m_name == GetActor()->m_currentWeapon->m_name)
+				{
+					currentIndex = invIndex;
+				}
+			}
+			int newIndex = (currentIndex + 1) % GetActor()->m_inventory.size();
+			GetActor()->EquipWeapon(newIndex);
+		}
+		///// MOVEMENT CONTROLS //////
+		float speed = 0.f;
+		if (g_engine->m_input->IsKeyDown(KEYCODE_SHIFT))	// Increase speed by a factor of 15 if held
+		{
+			speed = GetActor()->m_definition->m_runSpeed;
+		}
+		else
+		{
+			speed = GetActor()->m_definition->m_walkSpeed;
+		}
+
+		Vec3 forward = GetActor()->m_orientation.GetForwardDir_IFwd_JLeft_KUp();
+		forward.z = 0.f;
+		forward = forward.GetNormalized();
+		Vec3 left = forward.GetRotatedAboutZDegrees(90.f);
+
+		if (g_engine->m_input->IsKeyDown('A'))		// translate positive J							
+		{
+			GetActor()->MoveInDirection(left, speed);
+		}
+
+		if (g_engine->m_input->IsKeyDown('D'))		// translate negative J
+		{
+			GetActor()->MoveInDirection(-left, speed);
+		}
+
+		if (g_engine->m_input->IsKeyDown('W'))		// translate positive I
+		{
+			GetActor()->MoveInDirection(forward, speed);
+		}
+
+		if (g_engine->m_input->IsKeyDown('S'))		// translate negative I
+		{
+			GetActor()->MoveInDirection(-forward, speed);
+		}
 	}
 
-	///// MOVEMENT CONTROLS //////
-	float speed = 0.f;
-	if (g_engine->m_input->IsKeyDown(KEYCODE_SHIFT) || (g_engine->m_input->GetController(0).IsButtonDown(XboxButtonID::A)))	// Increase speed by a factor of 15 if held
+	///////////////////////////////////////////////////////////////
+	if (!m_isKeyboardPlayer)		// controller controls
 	{
-		speed = GetActor()->m_definition->m_runSpeed;
-	}
-	else
-	{
-		speed = GetActor()->m_definition->m_walkSpeed;
+		if (g_engine->m_input->GetController(0).GetRightTrigger() > 0.1)
+		{
+			if (GetActor()->m_currentWeapon != nullptr)
+			{
+				GetActor()->m_currentWeapon->Fire();
+			}
+		}
+		if (g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::X))
+		{
+			if (GetActor()->m_inventory.size() > 1)
+			{
+				GetActor()->EquipWeapon(0);
+			}
+		}
+		if (g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::Y))
+		{
+			if (GetActor()->m_inventory.size() > 1)
+			{
+				GetActor()->EquipWeapon(1);
+			}
+		}
+
+		if (g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::D_Pad_Down))
+		{
+			int currentIndex = 0;
+			for (int invIndex = 0; invIndex < GetActor()->m_inventory.size(); ++invIndex)
+			{
+				if (GetActor()->m_inventory[invIndex]->m_name == GetActor()->m_currentWeapon->m_name)
+				{
+					currentIndex = invIndex;
+				}
+			}
+			int newIndex = (currentIndex - 1) % GetActor()->m_inventory.size();
+			GetActor()->EquipWeapon(newIndex);
+		}
+		if (g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::D_Pad_Up))
+		{
+			int currentIndex = 0;
+			for (int invIndex = 0; invIndex < GetActor()->m_inventory.size(); ++invIndex)
+			{
+				if (GetActor()->m_inventory[invIndex]->m_name == GetActor()->m_currentWeapon->m_name)
+				{
+					currentIndex = invIndex;
+				}
+			}
+			int newIndex = (currentIndex + 1) % GetActor()->m_inventory.size();
+			GetActor()->EquipWeapon(newIndex);
+		}
+		///// MOVEMENT CONTROLS //////
+		float speed = 0.f;
+		if ((g_engine->m_input->GetController(0).IsButtonDown(XboxButtonID::A)))	// Increase speed by a factor of 15 if held
+		{
+			speed = GetActor()->m_definition->m_runSpeed;
+		}
+		else
+		{
+			speed = GetActor()->m_definition->m_walkSpeed;
+		}
+
+		Vec3 forward = GetActor()->m_orientation.GetForwardDir_IFwd_JLeft_KUp();
+		forward.z = 0.f;
+		forward = forward.GetNormalized();
+		Vec3 left = forward.GetRotatedAboutZDegrees(90.f);
+		float speedMagnitude = 0;
+
+		float rightStickMagnitude = controller.GetRightStick().GetMagnitude();
+		if (rightStickMagnitude > 0.f)
+		{
+			Vec2 direction = controller.GetRightStick().GetPosition();
+			GetActor()->TurnInDirection(Vec3(direction.x, direction.y, direction.y),(float)m_map->m_game->m_gameClock->GetDeltaSeconds()* speedMagnitude);
+			
+			//Vec3 goalDirection = Vec3::MakeFromPolarDegrees(0.f, controller.GetRightStick().GetOrientationDegrees());
+			//GetActor()->TurnInDirection(goalDirection, m_map->m_game->m_gameClock->GetDeltaSeconds() * speedMagnitude); 
+		}
+
+		float leftStickMagnitude = controller.GetLeftStick().GetMagnitude();
+		if (leftStickMagnitude > 0.f)
+		{
+			Vec2 direction2D = controller.GetLeftStick().GetPosition();
+			speedMagnitude = leftStickMagnitude;
+			Vec3 direction = Vec3(direction2D.x, direction2D.y, 0.f);
+			speed = speed * speedMagnitude; 
+			GetActor()->MoveInDirection(-direction, speed);
+		}
 	}
 
-	Vec3 forward = GetActor()->m_orientation.GetForwardDir_IFwd_JLeft_KUp();
-	forward.z = 0.f;
-	forward = forward.GetNormalized();
-	Vec3 left = forward.GetRotatedAboutZDegrees(90.f);
-
-	if (g_engine->m_input->IsKeyDown('A'))		// translate positive J							
-	{
-		GetActor()->MoveInDirection(left, speed);
-	}
-
-	if (g_engine->m_input->IsKeyDown('D'))		// translate negative J
-	{
-		GetActor()->MoveInDirection(-left, speed);
-	}
-
-	if (g_engine->m_input->IsKeyDown('W'))		// translate positive I
-	{
-		GetActor()->MoveInDirection(forward, speed);
-	}
-
-	if (g_engine->m_input->IsKeyDown('S'))		// translate negative I
-	{
-		GetActor()->MoveInDirection(-forward, speed);
-	}
 }
 
 Mat44 PlayerController::GetModelToWorldTransform() const

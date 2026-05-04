@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "Engine/Math/Vec3.hpp"
+#include "Engine/Audio/AudioSystem.hpp"
 #include "Game/WeaponDefinition.hpp"
 
 class WeaponDefinition;
@@ -30,5 +31,5 @@ public:
 	Shader*								m_shader = nullptr;
 	SpriteAnimDefinition*				m_currentPlayingAnimation = nullptr;
 	Clock*								m_animationClock = nullptr;
-
+	SoundID								m_fireSound;
 };

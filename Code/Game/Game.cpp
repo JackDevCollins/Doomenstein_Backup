@@ -360,7 +360,7 @@ void Game::CheckInputs()
 		}
 	}
 
-	if (g_engine->m_input->WasKeyJustPressed('P') || (g_engine->m_input->GetController(0).WasButtonJustPressed(XboxButtonID::Start)))					// p to pause
+	if (g_engine->m_input->WasKeyJustPressed('P'))					// p to pause
 	{
 		//g_app->m_isPaused = !g_app->m_isPaused;
 		m_gameClock->TogglePause();
@@ -567,7 +567,7 @@ void Game::RenderHUD() const
 			{
 				playerViewport = AABB2(m_screenCamera->GetOrthoBottomLeft(), m_screenCamera->GetOrthoTopRight());
 			}
-			AABB2 HUDrect = AABB2(Vec2(0.f, playerViewport.m_mins.y),Vec2(playerViewport.m_maxs.x, playerViewport.m_mins.y + (playerViewport.GetDimensions().y * .18)));
+			AABB2 HUDrect = AABB2(Vec2(0.f, playerViewport.m_mins.y),Vec2(playerViewport.m_maxs.x, playerViewport.m_mins.y + (float)(playerViewport.GetDimensions().y * .18)));
 			AddVertsForAABB2D(HUDVerts, HUDrect, Rgba8::WHITE);
 			
 			std::string health = "0";
@@ -576,8 +576,8 @@ void Game::RenderHUD() const
 				sprintf_s(buffer, "%03d", (int)player->GetActor()->m_health);
 				health = buffer;
 
-				DebugAddScreenText(" " + health + " ", AABB2(Vec2(playerViewport.m_mins.x, playerViewport.m_mins.y + (playerViewport.GetDimensions().y * .05)),
-				Vec2(playerViewport.m_maxs.x, playerViewport.m_mins.y + 100.f + (playerViewport.GetDimensions().y * .05))), 100.f, Vec2(.255f, .745f), 0.f, Rgba8::GREEN);
+				DebugAddScreenText(" " + health + " ", AABB2(Vec2(playerViewport.m_mins.x, playerViewport.m_mins.y + (float)(playerViewport.GetDimensions().y * .05)),
+				Vec2(playerViewport.m_maxs.x, playerViewport.m_mins.y + 100.f + (float)(playerViewport.GetDimensions().y * .05))), 100.f, Vec2(.255f, .745f), 0.f, Rgba8::GREEN);
 
 				Texture* HudTexture = g_engine->m_render->CreateOrGetTextureFromFile(player->GetActor()->m_currentWeapon->m_definition->m_baseTexture.c_str());		//g_engine->m_render->CreateOrGetTextureFromFile("Data/Images/Hud_Base.png");
 				g_engine->m_render->SetModelConstants();
@@ -629,7 +629,7 @@ void Game::RenderWeapon() const
 			{
 				playerViewport = AABB2(m_screenCamera->GetOrthoBottomLeft(), m_screenCamera->GetOrthoTopRight());
 			}
-			float HUDTopHeight = playerViewport.m_mins.y + (playerViewport.GetDimensions().y * .18);
+			float HUDTopHeight = playerViewport.m_mins.y + (float)(playerViewport.GetDimensions().y * .18);
 			Vec2 centerAboveHUD = Vec2( playerViewport.GetCenter().x, playerViewport.m_mins.y + HUDTopHeight);
 			Vec2 weaponBottomLeft = Vec2(centerAboveHUD.x - currentweapon->m_definition->m_spriteSize.x, centerAboveHUD.y);
 			Vec2 weaponTopRight = Vec2(centerAboveHUD.x + currentweapon->m_definition->m_spriteSize.x, centerAboveHUD.y + (weaponBottomLeft.y - playerViewport.m_mins.y) + currentweapon->m_definition->m_spriteSize.y);
@@ -640,7 +640,7 @@ void Game::RenderWeapon() const
 
 			AddVertsForAABB2D(weaponVerts, weaponRect, Rgba8::WHITE, UVs);
 
-				Texture* weaponTexture = spriteAtTime.GetSpriteSheet()->GetTexture();		//g_engine->m_render->CreateOrGetTextureFromFile("Data/Images/Hud_Base.png");
+				//Texture* weaponTexture = spriteAtTime.GetSpriteSheet()->GetTexture();		//g_engine->m_render->CreateOrGetTextureFromFile("Data/Images/Hud_Base.png");
 				g_engine->m_render->SetModelConstants();
 				g_engine->m_render->BindShader(g_engine->m_render->CreateOrGetShader(player->GetActor()->m_currentWeapon->m_definition->m_HUDshader.c_str()));
 				g_engine->m_render->SetBlendMode(BlendMode::ALPHA);
@@ -814,7 +814,7 @@ void Game::RenderAttractMode() const			// #todo add pulsing to start button? shi
 	g_engine->m_render->EndCamera( attractCamera);
 }
 
-void Game::UpdateLobbyMode(float deltaSeconds)
+void Game::UpdateLobbyMode([[maybe_unused]]float deltaSeconds)
 {
 
 }

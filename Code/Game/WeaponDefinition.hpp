@@ -20,6 +20,8 @@ public:
 
 	static std::vector<WeaponDefinition*> s_definitions;
 
+	std::string GetSoundByName(const std::string& name) const;
+
 	bool	LoadFromXmlElement(const XmlElement& element);
 
 
