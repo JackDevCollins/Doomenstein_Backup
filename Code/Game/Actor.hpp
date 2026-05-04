@@ -21,9 +21,9 @@ public:
 	Actor(Map* map, Game* owner, const ActorDefinition* actorDef);
 	virtual ~Actor();
 
-	void  Update(float deltaSeconds);
-	void  Render() const;
-	void  AddVertsForMe();
+	void	Update(float deltaSeconds);
+	void	Render() const;
+	void	AddVertsForMe();
 
 	void	UpdatePhysics(float deltaSeconds);
 	void	Damage(Actor* damager, float damageAmount);
@@ -37,7 +37,7 @@ public:
 	void	Attack();
 	void	EquipWeapon(int weaponNumber);
 
-	void	PlayAnimationByName(const char* animationName);
+	void	PlayAnimationByName(const char* animationName, int priority);
 	void	UpdateAnimation(float deltaSeconds);
 
 	virtual Mat44 GetModelToWorldTransform() const;
@@ -47,7 +47,8 @@ public:
 	Game*					m_game				= nullptr;
 	Clock*					m_animationClock	= nullptr;
 
-	SpriteAnimationGroupDefinition* m_currentPlayingAnimationGroup = nullptr;
+	SpriteAnimationGroupDefinition*		m_currentPlayingAnimationGroup = nullptr;
+	int									m_currentAnimationPriority = 0;
 
 	ActorHandle				m_handle;
 	const ActorDefinition*	m_definition		= nullptr;

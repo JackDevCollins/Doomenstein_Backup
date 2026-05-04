@@ -7,6 +7,8 @@
 #include "Engine/Math/FloatRange.hpp"
 
 class ActorDefinition;
+class SpriteAnimDefinition;
+class SpriteAnimationGroupDefinition;
 
 class WeaponDefinition
 {
@@ -43,13 +45,16 @@ public:
 
 	// visuals
 	std::string					m_HUDshader;
+	std::string					m_weaponShader;
+	SpriteSheet*				m_weaponSpriteSheet = nullptr;
 	std::string					m_baseTexture;
 	std::string					m_reticleTexture;
 	Vec2						m_reticleSize;
 	Vec2						m_spriteSize;
 	Vec2						m_spritePivot;
 
-	std::vector<animation>		m_animations;
+	//std::vector<SpriteAnimationGroupDefinition*>		m_animations;
+	std::vector<SpriteAnimDefinition*>		m_animations;
 
 	Strings						m_sounds;
 };

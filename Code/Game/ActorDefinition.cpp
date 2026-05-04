@@ -50,6 +50,7 @@ bool ActorDefinition::LoadFromXmlElement(const XmlElement& element)
 	m_canBePossessed		= ParseXmlAttribute(element, "canBePossessed", m_canBePossessed);
 	m_corpseLifetime		= ParseXmlAttribute(element, "corpseLifetime", m_corpseLifetime);
 	m_isVisible				= ParseXmlAttribute(element, "visible", m_isVisible);
+	m_dieOnSpawn			= ParseXmlAttribute(element, "dieOnSpawn", false);
 
 	const XmlElement* childElement = element.FirstChildElement();
 	while (childElement != nullptr)

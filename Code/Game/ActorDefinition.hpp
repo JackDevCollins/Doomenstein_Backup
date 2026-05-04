@@ -36,6 +36,7 @@ public:
 	FloatRange						m_damageOnCollide		= FloatRange(0,0);
 	float							m_impulseOnCollide		= 0.f;
 	bool							m_dieOnCollide			= false;
+	bool							m_dieOnSpawn			= false;
 
 	bool							m_physicsSimulated		= false;
 	float							m_walkSpeed				= 0.f;

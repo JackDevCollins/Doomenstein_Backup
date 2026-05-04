@@ -43,7 +43,7 @@ public:
 	void	CollideActorWithMap(Actor* actor);
 
 	void	CreateStartupActors();
-	void	CreatePlayerActor();
+	void	CreatePlayerActor(PlayerController* playerController);
 	
 	void	DeleteDestroyedActors();
 	Actor*  SpawnActor(const SpawnInfo& spawnInfo);
@@ -76,7 +76,7 @@ public:
 	std::vector<Actor*>			m_actors;
 	unsigned int				m_nextActorUID = 0;
 
-	Vec3						m_sunDirection = Vec3(2,1,-1);
+	Vec3						m_sunDirection = Vec3(1,1,-1);
 	float						m_sunIntensity = 0.85f;
 	float						m_ambientIntensity = 0.35f;
 

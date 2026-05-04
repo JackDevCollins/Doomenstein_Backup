@@ -37,15 +37,35 @@ void PlayerController::UpdateInput()
 void PlayerController::UpdateCamera()
 {
 	AABB2 screenBounds = AABB2(m_map->m_game->m_screenCamera->GetOrthoBottomLeft(), m_map->m_game->m_screenCamera->GetOrthoTopRight());
+	float aspect = g_engine->m_window->m_config.m_clientAspect;
+	float screenHeight = screenBounds.m_maxs.y;
+	float screenHalfHeight = screenHeight * .5f;
 
-	float tempAspect = g_engine->m_window->m_config.m_clientAspect;
+	if (m_map->m_game->m_joinedPlayers > 1)
+	{
+		if (m_playerNum == 1)
+		{
+			screenBounds.m_mins.y = 0.f;
+			screenBounds.m_maxs.y = screenHalfHeight;
+		}
+		if (m_playerNum == 2)
+		{
+			screenBounds.m_mins.y = screenHalfHeight;
+			screenBounds.m_maxs.y = screenHeight;
+		}
+		Vec2 dimensions = screenBounds.GetDimensions();
+		aspect = dimensions.x / dimensions.y;
+
+		m_camera->SetViewport(screenBounds);
+	}
+
 	if (GetActor()->m_definition->m_faction == "Demon")
 	{
-		m_camera->SetPerspectiveView(tempAspect, 100.f, 0.1f, 100.0f);
+		m_camera->SetPerspectiveView(aspect, 100.f, 0.1f, 100.0f);
 	}
 	else
 	{
-		m_camera->SetPerspectiveView(tempAspect, 60.f, 0.1f, 100.0f);
+		m_camera->SetPerspectiveView(aspect, 60.f, 0.1f, 100.0f);
 	}
 
 	if (m_cameraMode)
@@ -177,6 +197,8 @@ void PlayerController::ActorInput()
 	const XboxController& controller = g_engine->m_input->GetController(0);
 	Vec2 moveInputLeft = controller.GetLeftStick().GetPosition();
 	Vec2 moveInputRight = controller.GetRightStick().GetPosition();
+
+	if (GetActor() == nullptr) return;
 
 	if (g_engine->m_input->m_cursorState.m_cursorClientDelta != Vec2(0.f, 0.f))
 	{	

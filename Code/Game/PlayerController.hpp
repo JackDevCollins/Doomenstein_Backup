@@ -17,6 +17,8 @@ public:
 	Vec3			m_position;
 	EulerAngles		m_orientation;
 	bool			m_cameraMode = false;	// true = fps // false = free-fly //
+	int				m_playerNum = 0;
+	bool			m_isKeyboardPlayer = true;
 
 /*	void		Possess(ActorHandle HauntingActor) override;*/
 

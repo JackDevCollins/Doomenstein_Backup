@@ -13,8 +13,8 @@ class PlayerController;
 enum GameState
 {
 	GAMESTATE_ATTRACT,			// = 0
-	GAMESTATE_MENU,
-	GAMESTATE_GAME,				// = 1				
+	GAMESTATE_LOBBY,			// = 1
+	GAMESTATE_GAME,				// = 2				
 	NUM, 
 };
 
@@ -42,6 +42,12 @@ public:
 	void UpdateEntities( float deltaSeconds );
 	void UpdateCameras( float deltaSeconds);
 
+	void RenderHUD() const;
+	void RenderWeapon() const;
+
+	void JoinLobby(int controller);			// 1 = keyboard 2 = gamepad
+	void LeaveLobby(PlayerController* playerController);
+
 	void EnterState(GameState state);
 	void ExitState(GameState state);
 
@@ -54,10 +60,9 @@ public:
 	
 	App*				m_app;
 	
-	Camera*				m_screenCamera = nullptr;
-	PlayerController*	m_player = nullptr;
-	
-	std::vector<Vertex> m_deathScreen;
+	Camera*							m_screenCamera = nullptr;
+	std::vector<PlayerController*>	m_players;	
+	int								m_joinedPlayers = 0;
 	//-----------------------------------------------------------------------------------------------
 	Map*				m_currentMap = nullptr;
 
@@ -66,4 +71,6 @@ private:
 	void DeleteGarbageEntities();
 	void UpdateAttractMode(float deltaSeconds);
 	void RenderAttractMode() const;
+	void UpdateLobbyMode(float deltaSeconds);
+	void RenderLobbyMode() const;
 };

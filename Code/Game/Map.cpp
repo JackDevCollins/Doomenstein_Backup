@@ -12,7 +12,6 @@
 #include "Engine/Renderer/IndexBuffer.hpp"
 #include "Engine/Math/MathUtils.hpp"
 #include "Engine/Core/ErrorWarningAssert.hpp"
-#include "Engine/Renderer/Camera.hpp"
 #include "Engine/Renderer/DebugRender.hpp"
 
 
@@ -39,13 +38,21 @@ Map::Map(Game* game, const MapDefinition* definition)
 
 Map::~Map()	// #ToDo need to figure out what to release / delete
 {
-	delete m_game->m_player;
-	m_game->m_player = nullptr;
+	for (PlayerController* player : m_game->m_players)
+	{
+		if (player == nullptr) continue;
+		player->m_actorHandle = ActorHandle::INVALID;
+	}
 	m_vertexes.clear();
 	m_vertexBuffer->~VertexBuffer();
 	m_vertexBuffer = nullptr;
 	m_indexBuffer->~IndexBuffer();
 	m_indexBuffer = nullptr;
+	for (Actor* actor : m_actors)
+	{
+		delete actor;
+		actor = nullptr;
+	}
 	m_spawnpoints.clear();
 	m_actors.clear();
 	m_tiles.clear();
@@ -110,7 +117,7 @@ void Map::AddGeometryForWall(const AABB3& bounds, const AABB2& UVs)
 
 void Map::AddGeometryForFloor(const AABB3& bounds, const AABB2& UVs)
 {
-	AddVertsForIndexedQuad3D(m_vertexes, m_indexes,
+	AddVertsForQuad3DTaBiNo(m_vertexes, m_indexes,
 		Vec3(bounds.m_maxs.x, bounds.m_mins.y, bounds.m_mins.z),
 		Vec3(bounds.m_maxs.x, bounds.m_maxs.y, bounds.m_mins.z),
 		Vec3(bounds.m_mins.x, bounds.m_maxs.y, bounds.m_mins.z),
@@ -124,7 +131,7 @@ void Map::AddGeometryForCeiling(const AABB3& bounds, const AABB2& UVs)
 // 		Vec3(bounds.m_mins.x, bounds.m_maxs.y, bounds.m_maxs.z),
 // 		Vec3(bounds.m_mins.x, bounds.m_mins.y, bounds.m_maxs.z), Rgba8::RED, UVs);
 
-	AddVertsForIndexedQuad3D(m_vertexes, m_indexes, 
+	AddVertsForQuad3DTaBiNo(m_vertexes, m_indexes, 
 		 Vec3(bounds.m_mins.x, bounds.m_mins.y, bounds.m_maxs.z),
 		 Vec3(bounds.m_mins.x, bounds.m_maxs.y, bounds.m_maxs.z),
 		 Vec3(bounds.m_maxs.x, bounds.m_maxs.y, bounds.m_maxs.z),
@@ -175,14 +182,19 @@ void Map::Startup()
 {
 	CreateStartupActors();
 
-	CreatePlayerActor();
+	for (PlayerController* player : m_game->m_players)
+	{
+		if (player == nullptr) return;
+		CreatePlayerActor(player);
+	}
 }
 
 void Map::Update(float deltaSeconds)
 {
 	m_sunIntensity = GetClampedZeroToOne(m_sunIntensity);
 	m_ambientIntensity = GetClampedZeroToOne(m_ambientIntensity);
-	g_engine->m_render->SetLightingConstants(m_sunDirection,m_sunIntensity,m_ambientIntensity);
+	
+	g_engine->m_render->SetLightingConstants(m_sunDirection.GetNormalized(),m_sunIntensity,m_ambientIntensity);
 
 	for (int index = 0; index < m_actors.size(); ++index)
 	{
@@ -197,9 +209,12 @@ void Map::Update(float deltaSeconds)
 
 	DeleteDestroyedActors();
 
-	if (m_game->m_player->GetActor() == nullptr)
+	for (PlayerController* player : m_game->m_players)
 	{
-		CreatePlayerActor();
+		if (player != nullptr && player->GetActor() == nullptr)
+		{
+			CreatePlayerActor(player);
+		}
 	}
 }
 
@@ -377,7 +392,7 @@ void Map::CollideActorWithMap(Actor* actor)
 
 	if (collided && actor->m_definition->m_dieOnCollide)
 	{
-		actor->m_isGarbage = true;
+		actor->m_health = 0;
 	}
 }
 
@@ -393,7 +408,7 @@ void Map::CreateStartupActors()
 	}
 }
 
-void Map::CreatePlayerActor()
+void Map::CreatePlayerActor( PlayerController* playerController)
 {
 	int randomSpawnPositionIndex = RollRandomIntInRange(0, (int)m_spawnpoints.size() - 1);
 	ActorHandle* spawnPointActorHandle = &m_spawnpoints[randomSpawnPositionIndex];
@@ -409,7 +424,7 @@ void Map::CreatePlayerActor()
 	{
 		ERROR_RECOVERABLE("PLAYER ACTOR FAILED TO ADD");
 	}
-	m_game->m_player->Possess(newPlayer->m_handle);
+	playerController->Possess(newPlayer->m_handle);
 }
 
 void Map::DeleteDestroyedActors()

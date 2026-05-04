@@ -12,6 +12,8 @@
 #include "Engine/Renderer/Camera.hpp"
 #include "Engine/Math/MathUtils.hpp"
 #include "Engine/Renderer/IndexBuffer.hpp"
+#include "Engine/Renderer/Renderer.hpp"
+#include "Engine/Core/ErrorWarningAssert.hpp"
 
 Actor::Actor(Game* owner, float physicsHeight, float physicsRadius, Vec3 position, Rgba8 color, bool isStatic)
 	:m_game(owner)
@@ -85,7 +87,7 @@ Actor::Actor(Map* map, Game* game, const ActorDefinition* actorDef)
 		}
 	}
 
-	m_vertexBuffer = g_engine->m_render->CreateVertexBuffer(25, sizeof(Vertex));
+	m_vertexBuffer = g_engine->m_render->CreateVertexBuffer(1, sizeof(Vertex));
 	m_indexBuffer = g_engine->m_render->CreateIndexBuffer(sizeof(unsigned int));
 }	
 Actor::~Actor()
@@ -97,6 +99,7 @@ Actor::~Actor()
 	{
 		if (weapon != nullptr) 
 		{
+			delete weapon->m_animationClock;
 			delete weapon;
 		}
 	}
@@ -112,7 +115,6 @@ Actor::~Actor()
 		delete m_animationClock;
 		m_animationClock = nullptr;
 	}
-
 	delete m_indexBuffer;
 	delete m_vertexBuffer;
 }
@@ -129,6 +131,10 @@ void Actor::Update([[maybe_unused]]float deltaSeconds)
 		}
 	}
 
+	if (m_definition->m_dieOnSpawn)
+	{
+		m_health = 0;
+	}
 // update animation //
 	UpdateAnimation(deltaSeconds);
 
@@ -142,6 +148,12 @@ void Actor::Update([[maybe_unused]]float deltaSeconds)
 		if (!m_isDead)
 		{
 			m_decomposeTimer->Start();
+			if (m_animationClock == nullptr)
+			{
+				m_animationClock = new Clock(*m_game->m_gameClock);
+				m_currentPlayingAnimationGroup = m_definition->m_animationGroups[0];
+			}
+			PlayAnimationByName("Death", 10);
 			m_isDead = true;	
 		}
 	
@@ -150,135 +162,147 @@ void Actor::Update([[maybe_unused]]float deltaSeconds)
 			m_isGarbage = true;
 		}
 	}
-	if (m_definition->m_dieOnCollide && m_isDead)
-	{
-		m_isGarbage = true;
-	}
+// 	if (m_definition->m_dieOnCollide && m_isDead)
+// 	{
+// 		m_isGarbage = true;
+// 	}
 }
 
 void Actor::Render() const
 {
-	if(!m_definition->m_isVisible) return;
-
-	if (m_controller == m_game->m_player && m_game->m_player->m_cameraMode) return;
-
-	Mat44 playerTransform = m_map->m_game->m_player->GetModelToWorldTransform();
-
-	Mat44 billboardMatrix;
-	if (m_definition->m_billboardType == "WorldUpFacing") billboardMatrix = GetBillboardTransform(BillboardType::WORLD_UP_FACING, playerTransform, m_position);			// for demons and marines
-	if (m_definition->m_billboardType == "WorldUpOpposing") billboardMatrix = GetBillboardTransform(BillboardType::WORLD_UP_OPPOSING, playerTransform, m_position);		// for hit effects
-	if (m_definition->m_billboardType == "None") billboardMatrix = GetBillboardTransform(BillboardType::NONE, playerTransform, m_position);						// screenspace like HUD and weapons
-	if (m_definition->m_billboardType == "FullOpposing") billboardMatrix = GetBillboardTransform(BillboardType::FULL_OPPOSING, playerTransform, m_position);	// for plasma projectile
-
-	std::vector<Vertex> spriteQuadVerts;
-	std::vector<unsigned int> spriteIndexes;
-	Vec3 topLeft = Vec3(m_position.x, m_position.y - m_definition->m_visualsSize.x, m_position.z + m_definition->m_visualsSize.y);
-	Vec3 bottomRight = Vec3(m_position.x, m_position.y + m_definition->m_visualsSize.x, m_position.z - m_definition->m_visualsSize.y);
-	Vec3 bottomLeft = Vec3(topLeft.x, topLeft.y, bottomRight.z);
-	Vec3 topRight = Vec3(bottomRight.x, bottomRight.y, topLeft.z);
-
-	// get sprite based on direction
-	//camera to actor ggte vector quantitty. run that through the actor's world transform inverse transform, that is the directino you plug into the get anim for direction funciton.
-	Vec3 directionFromCameraToActor = m_position - m_game->m_player->m_camera->GetPosition();
-	Vec3 NormalizedCamtoActDirection = directionFromCameraToActor.GetNormalized();
-	
-	Mat44 actorSelfWorldTransform;
-	if (m_definition->m_name == "PlasmaProjectile")
+	for (PlayerController* player : m_game->m_players)
 	{
-		actorSelfWorldTransform = GetModelToWorldTransform();
-	}
-	else
-	{
-		actorSelfWorldTransform = GetModelToWorldTransformYawOnly();
-	}
-	actorSelfWorldTransform = actorSelfWorldTransform.GetOrthonormalInverse();
-	Vec3 directionToPlugIntoAnimationDirectionFunction = actorSelfWorldTransform.TransformVectorQuantity3D(NormalizedCamtoActDirection);
+		if (player == nullptr) return;
+		if (!m_definition->m_isVisible) return;
 
-	const SpriteAnimDefinition& spriteDirectionDef = m_currentPlayingAnimationGroup->GetAnimationForDirection(directionToPlugIntoAnimationDirectionFunction);
-	SpriteDefinition const& spriteAtTimeInDirection = spriteDirectionDef.GetSpriteDefAtTime(m_animationClock->GetTotalSeconds());
-	AABB2 UVs = spriteAtTimeInDirection.GetUVs();
-	
-	if (m_definition->m_renderRounded)
-	{
-		AddVertsForRoundedQuad3D(spriteQuadVerts, spriteIndexes, topLeft, bottomLeft, bottomRight, topRight, m_color, UVs);
-	}
-	else
-	{
-		AddVertsForQuad3D(spriteQuadVerts, bottomLeft, bottomRight, topRight, topLeft, m_color, UVs);
-	}
-	//Translate by the inverse pivot times the size to center the quad on its local origin.
+		if (m_controller == player && player->m_cameraMode) return;
 
-	//first attempt//
-//	AABB2 actorBounds = AABB2(Vec2::ZERO,m_definition->m_visualsSize);
-//	actorBounds.Translate(-m_definition->m_pivot * m_definition->m_visualsSize);
-// 	std::vector<Vertex> spriteVerts;
-// 	std::vector<unsigned int> spriteIndexes;
-// 	AddVertsForRoundedQuad3D(spriteVerts, spriteIndexes, Vec3(0.f, actorBounds.m_mins.x, actorBounds.m_maxs.y),
-// 								Vec3(0.f, actorBounds.m_mins.x, actorBounds.m_mins.y),
-// 								Vec3(0.f, actorBounds.m_maxs.x, actorBounds.m_mins.y),
-// 								Vec3(0.f, actorBounds.m_maxs.x, actorBounds.m_maxs.y));
+		if (m_currentPlayingAnimationGroup->m_name == "Death")
+		{
+			DebuggerPrintf("death");
+		}
 
-	Rgba8 actorColor = m_color;
+		Mat44 playerTransform = player->GetModelToWorldTransform();
 
-	if (m_isDead)
-	{
-		actorColor.ScaleColor(.4f);
-	}
+		if (player->m_cameraMode)
+		{
+			playerTransform = player->GetActor()->GetModelToWorldTransform();
+		}
 
-	if (m_definition->m_name == "PlasmaProjectile")
-	{
-		g_engine->m_render->BindTexture(nullptr);
-		g_engine->m_render->BindShader(nullptr);
-		g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
-		g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
-		g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
+		Mat44 billboardMatrix;
+		if (m_definition->m_billboardType == "WorldUpFacing") billboardMatrix = GetBillboardTransform(BillboardType::WORLD_UP_FACING, playerTransform, m_position);			// for demons and marines
+		if (m_definition->m_billboardType == "WorldUpOpposing") billboardMatrix = GetBillboardTransform(BillboardType::WORLD_UP_OPPOSING, playerTransform, m_position);		// for hit effects
+		if (m_definition->m_billboardType == "None") billboardMatrix = GetBillboardTransform(BillboardType::NONE, playerTransform, m_position);						// screenspace like HUD and weapons
+ 		if (m_definition->m_billboardType == "FullOpposing") billboardMatrix = GetBillboardTransform(BillboardType::FULL_OPPOSING, playerTransform, m_position);	// for plasma projectile
 
-		g_engine->m_render->SetModelConstants(GetModelToWorldTransform(), actorColor);
-		//g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+		std::vector<Vertex> spriteQuadVerts;
+		std::vector<unsigned int> spriteIndexes;
 
-		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);
-		g_engine->m_render->SetModelConstants(GetModelToWorldTransform(), actorColor.GetScaledColor(0.5f) ); 
-		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
-	}
+		//Translate by the inverse pivot times the size to center the quad on its local origin.
+		AABB2 actorBounds = AABB2(Vec2::ZERO,m_definition->m_visualsSize);
+		actorBounds.Translate(-m_definition->m_pivot * m_definition->m_visualsSize);
+		Vec3 topLeft = Vec3(0.f, actorBounds.m_mins.x, actorBounds.m_maxs.y);
+		Vec3 topRight = Vec3(0.f, actorBounds.m_maxs.x, actorBounds.m_maxs.y);
+		Vec3 bottomLeft = Vec3(0.f, actorBounds.m_mins.x, actorBounds.m_mins.y);
+		Vec3 bottomRight = Vec3(0.f, actorBounds.m_maxs.x, actorBounds.m_mins.y);
+										
+		// get sprite based on direction
+		//camera to actor get vector quantity. run that through the actor's world transform inverse transform, that is the direction you plug into the get anim for direction funciton.
+		Vec3 directionFromCameraToActor = m_position - player->m_camera->GetPosition();
+		Vec3 NormalizedCamtoActDirection = directionFromCameraToActor.GetNormalized();
 
-//  	if (m_controller == nullptr || !m_game->m_player->m_cameraMode )
-//  	{
-// 		g_engine->m_render->BindTexture(nullptr);
-// 		g_engine->m_render->BindShader(nullptr);
-// 		g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
-// 		g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
-// 		g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
-// 
-// 		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor);
-// 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
-// 		
-// 		g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);
-// 		g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor.GetScaledColor(0.5f)); 
-// 		g_engine->m_render->DrawVertexArray(m_physicsCylinder);
-// 	}
+		Mat44 actorSelfWorldTransform;
+		if (m_definition->m_name == "PlasmaProjectile")
+		{
+			actorSelfWorldTransform = GetModelToWorldTransform();
+		}
+		else
+		{
+			actorSelfWorldTransform = GetModelToWorldTransformYawOnly();
+		}
+		actorSelfWorldTransform = actorSelfWorldTransform.GetOrthonormalInverse();
+		Vec3 directionToPlugIntoAnimationDirectionFunction = actorSelfWorldTransform.TransformVectorQuantity3D(NormalizedCamtoActDirection);
 
-	else
-	{
-		g_engine->m_render->BindTexture(m_currentPlayingAnimationGroup->m_spriteSheet->GetTexture());
-		//g_engine->m_render->BindTexture(nullptr);
+		const SpriteAnimDefinition& spriteDirectionDef = m_currentPlayingAnimationGroup->GetAnimationForDirection(directionToPlugIntoAnimationDirectionFunction);
+		SpriteDefinition const& spriteAtTimeInDirection = spriteDirectionDef.GetSpriteDefAtTime((float)m_animationClock->GetTotalSeconds());
+		AABB2 UVs = spriteAtTimeInDirection.GetUVs();
 		
-		g_engine->m_render->BindShader(m_shader);
-		g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
-		g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
-		g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
-		//g_engine->m_render->SetModelConstants();
-		g_engine->m_render->SetModelConstants(actorSelfWorldTransform, actorColor);
-		//g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor);
-		//g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+		if (m_definition->m_renderRounded)
+		{
+			AddVertsForRoundedQuad3D(spriteQuadVerts, spriteIndexes, topLeft, bottomLeft, bottomRight, topRight, Rgba8::WHITE, UVs);
+			
+		}
+		else
+		{
+			AddVertsForQuad3D(spriteQuadVerts, bottomLeft, bottomRight, topRight, topLeft, Rgba8::WHITE, UVs);
+		}
 
-		g_engine->m_render->CopyCPUToGPU(spriteQuadVerts.data(), (const unsigned int)spriteQuadVerts.size() * sizeof(Vertex), m_vertexBuffer);
-		g_engine->m_render->CopyCPUToGPU(spriteIndexes.data(), (const unsigned int)spriteIndexes.size() * sizeof(unsigned int), m_indexBuffer);
 
-		g_engine->m_render->DrawIndexedVertexBuffer(m_vertexBuffer, m_indexBuffer, m_indexBuffer->GetCount());
+		Rgba8 actorColor = m_color;
+
+		if (m_isDead)
+		{
+			actorColor.ScaleColor(.4f);
+		}
+
+		if (m_definition->m_name == "PlasmaProjectile" || m_definition->m_name == "BloodSplatter")
+		{
+			//g_engine->m_render->BindTexture(g_engine->m_render->CreateOrGetTextureFromFile("Data/Images/Projectile_BloodSplatter.png"))
+			g_engine->m_render->BindTexture(m_currentPlayingAnimationGroup->m_spriteSheet->GetTexture());
+			g_engine->m_render->BindShader(m_shader);
+			g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
+			g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
+			g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
+
+			g_engine->m_render->SetModelConstants(billboardMatrix);
+
+			g_engine->m_render->CopyCPUToGPU(spriteQuadVerts.data(), (const unsigned int)spriteQuadVerts.size() * sizeof(Vertex), m_vertexBuffer);
+			g_engine->m_render->CopyCPUToGPU(spriteIndexes.data(), (const unsigned int)spriteIndexes.size() * sizeof(unsigned int), m_indexBuffer);
+
+			g_engine->m_render->DrawVertexBuffer(m_vertexBuffer, m_vertexBuffer->GetCount());
+			// physics / hitbox debug
+// 			g_engine->m_render->SetModelConstants(GetModelToWorldTransform(), actorColor);
+// 			g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+// 			g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);
+// 			g_engine->m_render->SetModelConstants(GetModelToWorldTransform(), actorColor.GetScaledColor(0.5f) ); 
+// 			g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+		}
+
+//			if (m_controller == nullptr || !m_game->m_player->m_cameraMode )
+//			{
+// 			g_engine->m_render->BindTexture(nullptr);
+// 			g_engine->m_render->BindShader(nullptr);
+// 			g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
+// 			g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
+// 			g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
+// 
+// 			g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor);
+// 			g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+// 			
+// 			g_engine->m_render->SetRasterizerMode(RasterizerMode::WIREFRAME_CULL_BACK);
+// 			g_engine->m_render->SetModelConstants(GetModelToWorldTransformYawOnly(), actorColor.GetScaledColor(0.5f)); 
+// 			g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+// 		}
+
+		else
+		{
+			g_engine->m_render->BindTexture(m_currentPlayingAnimationGroup->m_spriteSheet->GetTexture());
+
+			g_engine->m_render->BindShader(m_shader);
+			g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
+			g_engine->m_render->SetRasterizerMode(RasterizerMode::SOLID_CULL_BACK);
+			g_engine->m_render->SetDepthMode(DepthMode::READ_WRITE_LESS_EQUAL);
+			
+			g_engine->m_render->SetModelConstants(billboardMatrix);
+
+			//g_engine->m_render->DrawVertexArray(m_physicsCylinder);
+
+			g_engine->m_render->CopyCPUToGPU(spriteQuadVerts.data(), (const unsigned int)spriteQuadVerts.size() * sizeof(Vertex), m_vertexBuffer);
+			g_engine->m_render->CopyCPUToGPU(spriteIndexes.data(), (const unsigned int)spriteIndexes.size() * sizeof(unsigned int), m_indexBuffer);
+
+			g_engine->m_render->DrawIndexedVertexBuffer(m_vertexBuffer, m_indexBuffer, m_indexBuffer->GetCount());
+		}
 	}
-
-
-
 }
 
 void Actor::AddVertsForMe()
@@ -296,7 +320,10 @@ void Actor::AddVertsForMe()
 
 void Actor::Attack()
 {	
-	m_currentWeapon->Fire();
+	if (m_currentWeapon->Fire())
+	{
+		PlayAnimationByName("Attack", 2);
+	}
 }
 
 void Actor::EquipWeapon(int weaponNumber)
@@ -304,35 +331,65 @@ void Actor::EquipWeapon(int weaponNumber)
 	m_currentWeapon = m_inventory[weaponNumber];
 }
 
-
-void Actor::PlayAnimationByName(const char* animationName)
+void Actor::PlayAnimationByName(const char* animationName,int priority) // bite animation and hurt animation bugged? double play? 
 {
-	for (int index = 0; index < m_definition->m_animationGroups.size(); ++index)
+	if (m_currentPlayingAnimationGroup->m_name != animationName)
 	{
-		if (m_definition->m_animationGroups[index]->m_name == animationName)
+		if (priority < m_currentAnimationPriority && m_animationClock->GetTotalSeconds() < m_currentPlayingAnimationGroup->GetDuration())
 		{
-			m_currentPlayingAnimationGroup = m_definition->m_animationGroups[index];
-			m_animationClock->Reset();
+			return;
 		}
+		if (m_currentAnimationPriority > priority && m_currentPlayingAnimationGroup->GetDuration() > m_animationClock->GetTotalSeconds())
+		{
+			return;
+		}
+			for (int index = 0; index < m_definition->m_animationGroups.size(); ++index)
+			{
+				if (m_definition->m_animationGroups[index]->m_name == animationName)
+				{
+					m_currentPlayingAnimationGroup = m_definition->m_animationGroups[index];
+					m_currentAnimationPriority = priority;
+					m_animationClock->Reset();
+					break;
+				}
+			}
 	}
 }
 
-void Actor::UpdateAnimation(float deltaSeconds)
+void Actor::UpdateAnimation([[maybe_unused]]float deltaSeconds)
 {
+	if (m_animationClock == nullptr) return;
+
 	if (m_currentPlayingAnimationGroup == nullptr)
 	{
 		m_currentPlayingAnimationGroup = m_definition->m_animationGroups[0];
 	}
 
-	if (m_currentPlayingAnimationGroup->GetDuration() < m_animationClock->GetTotalSeconds())
-	{
-		m_currentPlayingAnimationGroup = m_definition->m_animationGroups[0];
-		m_animationClock->Reset();
-	}
+ 	if (m_animationClock->GetTotalSeconds() > m_currentPlayingAnimationGroup->GetDuration() && m_currentPlayingAnimationGroup->m_spriteAnimationDefinitions[0]->m_playbackMode != SpriteAnimPlaybackType::LOOP)
+ 	{
+//  		if (m_queuedAnimation != nullptr)
+//  		{
+//  			PlayAnimationByName(m_queuedAnimation->m_name.c_str(), 1);
+//  			m_queuedAnimation = nullptr;
+//  		}
+//  		else
+//  		{
+ 			PlayAnimationByName("Walk", 0);
+ 		//}
+ 	}
 
-	if (m_currentPlayingAnimationGroup->m_scaleBySpeed && m_animationClock->GetTimeScale() == 1.0)
+	if (m_currentPlayingAnimationGroup->m_scaleBySpeed)
 	{
 		m_animationClock->SetTimeScale(m_velocity.GetLength() / m_definition->m_runSpeed);
+	}
+	else
+	{
+		m_animationClock->SetTimeScale(1.0);
+	}
+
+	if (!m_inventory.empty() && m_currentWeapon->m_currentPlayingAnimation != nullptr)
+	{
+		m_currentWeapon->Update();
 	}
 
 }
@@ -369,6 +426,10 @@ void Actor::UpdatePhysics(float deltaSeconds)
 			m_velocity = Vec3(m_velocity.x,m_velocity.y,0.f);
 		}
 		m_velocity += (m_acceleration * deltaSeconds);
+		if (m_velocity.GetLengthSquared() > .1f)
+		{
+			PlayAnimationByName("Walk", 0);
+		}
 		m_position += m_velocity * deltaSeconds;
 		m_acceleration = Vec3(0,0,0);
 	}
@@ -377,6 +438,10 @@ void Actor::UpdatePhysics(float deltaSeconds)
 void Actor::Damage(Actor* damager, float damageAmount)
 {
 	m_health -= damageAmount;
+	if (m_health > 0)
+	{
+		PlayAnimationByName("Hurt", 3);
+	}
 
 	if (m_definition->m_dieOnCollide) return;
 
@@ -413,7 +478,7 @@ void Actor::OnCollide(ActorHandle collidedWith)
 			Vec3 impulseDirection = m_orientation.GetForwardDir_IFwd_JLeft_KUp();
 			hit->AddImpulse(impulseDirection.GetNormalized() * m_definition->m_impulseOnCollide);
 
-			m_isDead = true;
+			m_health = 0.f;
 		}	
 
 		if (m_definition->m_canBePossessed && hit->m_definition->m_canBePossessed)
@@ -452,11 +517,14 @@ void Actor::OnCollide(ActorHandle collidedWith)
 
 void Actor::OnPossessed()
 {
-	if (static_cast<PlayerController*>(m_controller) == m_game->m_player)
+	for (PlayerController* player : m_game->m_players)
 	{
-		m_game->m_player->m_cameraMode = true;
-		static_cast<PlayerController*>(m_controller)->m_position = m_position + Vec3(0.f, 0.f, m_definition->m_cameraEyeHeight);
-		static_cast<PlayerController*>(m_controller)->m_orientation = m_orientation;
+		if (static_cast<PlayerController*>(m_controller) == player)
+		{
+			player->m_cameraMode = true;
+			static_cast<PlayerController*>(m_controller)->m_position = m_position + Vec3(0.f, 0.f, m_definition->m_cameraEyeHeight);
+			static_cast<PlayerController*>(m_controller)->m_orientation = m_orientation;
+		}
 	}
 }
 

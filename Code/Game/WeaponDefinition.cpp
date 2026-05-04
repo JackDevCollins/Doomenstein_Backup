@@ -1,5 +1,9 @@
 #include "Game/WeaponDefinition.hpp"
+#include "Game/SpriteAnimationGroupDefinition.hpp"
+#include "Engine/Renderer/SpriteAnimDefinition.hpp"
 #include "Engine/Core/ErrorWarningAssert.hpp"
+#include "Engine/Math/IntVec2.hpp"
+#include "Engine/Core/Engine.hpp"
 
 void WeaponDefinition::InitializeDefinitions(const char* path)
 {
@@ -83,17 +87,24 @@ bool WeaponDefinition::LoadFromXmlElement(const XmlElement& element)
 
 				if (grandChildName == "Animation")
 				{
-					animation newAnimation;
+					SpriteAnimDefinition* newSpriteAnim = new SpriteAnimDefinition;
+					
 
-					newAnimation.m_name				= ParseXmlAttribute(*grandChildElement, "name", "invalid");
-					newAnimation.m_shader			= ParseXmlAttribute(*grandChildElement, "shader", "invalid");
-					newAnimation.m_spritesheet		= ParseXmlAttribute(*grandChildElement, "spriteSheet", "invalid");
-					newAnimation.m_cellcount		= ParseXmlAttribute(*grandChildElement, "cellCount", Vec2(0, 0));
-					newAnimation.m_secondsPerFrame  = ParseXmlAttribute(*grandChildElement, "secondsPerFrame", 0.f);
-					newAnimation.m_startFrame		= ParseXmlAttribute(*grandChildElement, "startFrame", 0);
-					newAnimation.m_endFrame			= ParseXmlAttribute(*grandChildElement, "endFrame", 0);
+					//newSpriteAnimationGroup->m_name				= ParseXmlAttribute(*grandChildElement, "name", "invalid");
+					m_weaponShader									= ParseXmlAttribute(*grandChildElement, "shader", "invalid");
+					if (m_weaponSpriteSheet == nullptr)
+					{
+						std::string spriteSheetPath					= ParseXmlAttribute(*grandChildElement, "spriteSheet", "invalid");
+						Texture* spriteTexture						= g_engine->m_render->CreateOrGetTextureFromFile(spriteSheetPath.c_str());
+ 						IntVec2 cellcount							= ParseXmlAttribute(*grandChildElement, "cellCount", IntVec2(0, 0));
+						m_weaponSpriteSheet							= new SpriteSheet(*spriteTexture, cellcount);
+					}
+					newSpriteAnim->m_spriteSheet					= m_weaponSpriteSheet;
+					newSpriteAnim->m_secondsPerFrame				= ParseXmlAttribute(*grandChildElement, "secondsPerFrame", 0.f);
+					newSpriteAnim->m_startSpriteIndex				= ParseXmlAttribute(*grandChildElement, "startFrame", 0);
+					newSpriteAnim->m_endSpriteIndex					= ParseXmlAttribute(*grandChildElement, "endFrame", 0);
 
-					m_animations.push_back(newAnimation);
+					m_animations.push_back(newSpriteAnim);
 
 					grandChildElement = grandChildElement->NextSiblingElement();
 				}
