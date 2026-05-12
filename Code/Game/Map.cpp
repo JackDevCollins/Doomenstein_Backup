@@ -629,27 +629,28 @@ void Map::AddMoreBoys()
 		{
 			if (m_actors[index]->m_definition->m_name == "Nazi" || m_actors[index]->m_definition->m_name == "Cacodemon")
 			{
-				++numberOfBoys;
+				numberOfBoys += 1;
 			}
 		}
-		if (numberOfBoys < 4)
-		{
-			SpawnInfo newSpawn;
-			newSpawn.m_actorType = "Nazi";
-			int randomx = RollRandomIntInRange(0 + 1, m_dimensions.x -1);
-			int randomy = RollRandomIntInRange(0 + 1, m_dimensions.y -1);
-			newSpawn.m_position = Vec3(randomx, randomy, .1f);
-			newSpawn.m_orientation = EulerAngles((float)RollRandomIntInRange(0, 360), 0.f, 0.f);
-
-			SpawnInfo newSpawn2;
-			newSpawn2.m_actorType = "Nazi";
-			newSpawn2.m_position = Vec3(25.f, 25.f, .1f);
-			newSpawn2.m_orientation = EulerAngles((float)RollRandomIntInRange(0, 360), 0.f, 0.f);
-
-			AddActorToMap(SpawnActor(newSpawn));
-			AddActorToMap(SpawnActor(newSpawn2));
-		}
 	}
+	if (numberOfBoys < 4)
+	{
+		SpawnInfo newSpawn;
+		newSpawn.m_actorType = "Nazi";
+		int randomx = RollRandomIntInRange(0 + 1, m_dimensions.x -1);
+		int randomy = RollRandomIntInRange(0 + 1, m_dimensions.y -1);
+		newSpawn.m_position = Vec3(randomx, randomy, .1f);
+		newSpawn.m_orientation = EulerAngles((float)RollRandomIntInRange(0, 360), 0.f, 0.f);
+
+		SpawnInfo newSpawn2;
+		newSpawn2.m_actorType = "Nazi";
+		newSpawn2.m_position = Vec3(25.f, 25.f, .1f);
+		newSpawn2.m_orientation = EulerAngles((float)RollRandomIntInRange(0, 360), 0.f, 0.f);
+
+		AddActorToMap(SpawnActor(newSpawn));
+		AddActorToMap(SpawnActor(newSpawn2));
+	}
+	
 }
 
 void Map::Render()
