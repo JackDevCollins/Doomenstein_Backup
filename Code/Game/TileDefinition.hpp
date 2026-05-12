@@ -21,6 +21,9 @@ public:
 
 	std::string		m_name;
 	bool			m_isSolid;
+	bool			m_hasTop;
+	bool			m_hasBottom;
+	float			m_height;
 	Rgba8			m_mapImagePixelColor;
 	IntVec2			m_floorSpriteCoords;
 	IntVec2			m_ceilingSpriteCoords;

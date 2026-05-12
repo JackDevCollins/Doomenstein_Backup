@@ -9,6 +9,7 @@
       <Sound sound="Fire" name="Data/Audio/PistolFire.wav"/>
     </Sounds>
   </WeaponDefinition>
+
   <!-- Plasma Rifle -->
   <WeaponDefinition name="PlasmaRifle" refireTime="0.1" projectileCount="1" projectileActor="PlasmaProjectile" projectileCone="4.0" projectileSpeed="4.0">
     <HUD shader="Default" baseTexture="Data/Images/Hud_Base.png" reticleTexture="Data/Images/Reticle.png" reticleSize="16,16" spriteSize="256,256" spritePivot="0.5,0.0">
@@ -20,6 +21,19 @@
       <Sound sound="Fire" name="Data/Audio/PlasmaFire.wav"/>
     </Sounds>
   </WeaponDefinition>
+
+ <!-- Super Shotgun -->
+  <WeaponDefinition name="SuperShotgun" refireTime="3.4" rayCount="20" rayCone="40" rayRange="15.0" rayDamage="5.0~15.0" rayImpulse="12.0">
+    <HUD shader="Default" baseTexture="Data/Images/Hud_Base.png" reticleTexture="Data/Images/Reticle.png" reticleSize="16,16" spriteSize="256,256" spritePivot="0.5,0.0">
+      <Animation name="Idle" shader="Default" spriteSheet="Data/Images/SSgun_1x10.png" cellCount="10,1" secondsPerFrame="0.125" startFrame="0" endFrame="0" />
+      <Animation name="Attack" shader="Default" spriteSheet="Data/Images/SSgun_1x10.png" cellCount="10,1" secondsPerFrame="0.3" startFrame="1" endFrame="8" />
+    </HUD>
+    <Sounds>
+      <Sound sound="Fire"  name="Data/Audio/Supershotgun.wav"/>
+
+    </Sounds>
+  </WeaponDefinition>
+
   <!-- Demon Melee -->
   <WeaponDefinition name="DemonMelee" refireTime="2.0" meleeCount="1" meleeArc="180.0" meleeRange="0.75" meleeDamage="2.0~4.0" meleeImpulse="2.0">
     <Sounds>

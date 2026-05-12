@@ -50,7 +50,7 @@ public:
 	bool	AddActorToMap(Actor* actor);
 	Actor*  GetActorByHandle(const ActorHandle handle) const;
 	Actor*  GetClosestVisibleEnemy(ActorHandle actorHandle);
-	void	DebugPossessNext();
+	void    AddMoreBoys();
 
 	void Render();
 

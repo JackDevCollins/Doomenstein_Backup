@@ -384,7 +384,15 @@ void Game::CheckInputs()
 	{
 		if (g_engine->m_input->WasKeyJustPressed('F'))			// toggle possession camera
 		{
-			m_players[0]->ToggleCameraMode();
+			if (m_players[0]->m_cameraMode == FPS || m_players[0]->m_cameraMode == SKATER)
+			{
+				m_players[0]->ChangeCameraMode(CameraMode::FREEFLY);
+			}
+			else if (m_players[0]->m_cameraMode == FREEFLY || m_players[0]->m_cameraMode == SKATER)
+			{
+				m_players[0]->ChangeCameraMode(CameraMode::FPS);
+			}
+			
 		}
 		if (g_engine->m_input->WasKeyJustPressed('N'))			// Possess Next Actor
 		{
@@ -599,7 +607,14 @@ void Game::RenderHUD() const
 				//g_engine->m_render->BindShader(nullptr);
 				g_engine->m_render->BindTexture(reticleTexture);
 				g_engine->m_render->DrawVertexArray(reticleVerts);
+
+// 				std::vector<Vertex> headVerts;
+// 				
+// 				AABB2 headAABB2 = AABB2(Vec2(0 + playerViewport.GetDimensions().x * .45, playerViewport.m_mins.y + playerViewport.m_mins.y * .05),Vec2(playerViewport.m_maxs.x - (0 + playerViewport.GetDimensions().x * .45), playerViewport.m_mins.y + (float)(playerViewport.GetDimensions().y * .1)))
+// 				Texture* headTexture = 
 			}
+
+
 
 			if (player->GetActor()->m_isDead)
 			{
@@ -623,7 +638,7 @@ void Game::RenderWeapon() const
 	{
 		if (player != nullptr)
 		{
-			if (!player->m_cameraMode) return;
+			if (player->m_cameraMode == FREEFLY) return;
 			Weapon* currentweapon = player->GetActor()->m_currentWeapon;
 			AABB2 playerViewport = player->m_camera->GetViewport();
 
@@ -643,6 +658,8 @@ void Game::RenderWeapon() const
 			AddVertsForAABB2D(weaponVerts, weaponRect, Rgba8::WHITE, UVs);
 
 				//Texture* weaponTexture = spriteAtTime.GetSpriteSheet()->GetTexture();		//g_engine->m_render->CreateOrGetTextureFromFile("Data/Images/Hud_Base.png");
+			if (player->m_cameraMode != CameraMode::SKATER)
+			{
 				g_engine->m_render->SetModelConstants();
 				g_engine->m_render->BindShader(g_engine->m_render->CreateOrGetShader(player->GetActor()->m_currentWeapon->m_definition->m_HUDshader.c_str()));
 				g_engine->m_render->SetBlendMode(BlendMode::ALPHA);
@@ -651,6 +668,7 @@ void Game::RenderWeapon() const
 				g_engine->m_render->BindTexture(currentweapon->m_weaponSpriteSheet->GetTexture());
 				g_engine->m_render->DrawVertexArray(weaponVerts);
 
+			}
 				std::vector<Vertex> reticleVerts;
 				Vec2 centerViewport = playerViewport.GetCenter();
 				Vec2 reticleBL = Vec2(centerViewport.x - player->GetActor()->m_currentWeapon->m_definition->m_reticleSize.x, centerViewport.y - player->GetActor()->m_currentWeapon->m_definition->m_reticleSize.y);
@@ -748,7 +766,6 @@ void Game::EnterState(GameState state)	// state is what you are entering
 			m_currentMap = new Map(this, MapDefinition::GetByName(mapToLoad));
 			m_currentMap->Startup();
 		}
-
 	}
 }
 

@@ -47,7 +47,7 @@ bool Weapon::Fire()
 
 			if (bulletRaycast.m_didImpact)
 			{
-				if (bulletRaycast.m_impactedObjectID == "Demon" || bulletRaycast.m_impactedObjectID == "Marine")
+				if (bulletRaycast.m_impactedObjectID == "Pinky" || bulletRaycast.m_impactedObjectID == "Marine" || bulletRaycast.m_impactedObjectID == "Cacodemon")
 				{
 					static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->Damage(m_owner, RollRandomFloatInRange(m_definition->m_rayDamage));
 					static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->AddImpulse( - bulletRaycast.m_impactNormal * m_definition->m_rayImpulse);
@@ -62,6 +62,17 @@ bool Weapon::Fire()
 					Actor* spawnedImpact = m_owner->m_map->SpawnActor(impactSpawninfo);
 					m_owner->m_map->AddActorToMap(spawnedImpact);
 
+				}
+				if (bulletRaycast.m_impactedObjectID == "LoungeBabe")
+				{
+					if (static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->m_currentPlayingAnimationGroup->m_name == "Shake")
+					{
+						static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->PlayAnimationByName("Lounge", 5);
+					}
+					else
+					{
+						static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->PlayAnimationByName("Shake", 10);
+					}
 				}
 				else
 				{
@@ -80,7 +91,62 @@ bool Weapon::Fire()
 // 				DebugAddWorldArrow(bulletRaycast.m_impactPosition, bulletRaycast.m_impactPosition + (bulletRaycast.m_impactNormal.GetNormalized() * 0.3f), 0.03f, 1.f, Rgba8::BLUE, Rgba8::BLUE);
 // 			}
 		}
+		if (m_name == "SuperShotgun")
+		{
+			// replace getfwdIJK with origin to random point in cone normalized 
+			m_fireSound = g_engine->m_audio->CreateOrGetSound(m_definition->GetSoundByName("Fire").c_str());
+			
+			g_engine->m_audio->StartSound(m_fireSound);
+			RaycastResult3D bulletRaycast = m_owner->m_map->RaycastAll(
+				Vec3(m_owner->m_position.x, m_owner->m_position.y, m_owner->m_definition->m_cameraEyeHeight * .75f) +
+				(static_cast<PlayerController*>(m_owner->m_controller)->m_camera->GetOrientation().GetForwardDir_IFwd_JLeft_KUp().GetNormalized() * (m_owner->m_physicsRadius + .01f)),
+				static_cast<PlayerController*>(m_owner->m_controller)->m_camera->GetOrientation().GetForwardDir_IFwd_JLeft_KUp(),
+				m_definition->m_rayRange, m_owner);
 
+			if (bulletRaycast.m_didImpact)
+			{
+				if (bulletRaycast.m_impactedObjectID == "Pinky" || bulletRaycast.m_impactedObjectID == "Marine" || bulletRaycast.m_impactedObjectID == "Cacodemon")
+				{
+					static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->Damage(m_owner, RollRandomFloatInRange(m_definition->m_rayDamage));
+					static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->AddImpulse(-bulletRaycast.m_impactNormal * m_definition->m_rayImpulse);
+					SpawnInfo impactSpawninfo;
+					impactSpawninfo.m_actorType = "BloodSplatter";
+					impactSpawninfo.m_position = bulletRaycast.m_impactPosition;
+					// 					Actor* impactedDemon =  static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject);
+					// 					if (impactedDemon != nullptr)
+					// 					{
+					// 						impactSpawninfo.m_velocity = impactedDemon->m_velocity;
+					// 					}
+					Actor* spawnedImpact = m_owner->m_map->SpawnActor(impactSpawninfo);
+					m_owner->m_map->AddActorToMap(spawnedImpact);
+
+				}
+				if (bulletRaycast.m_impactedObjectID == "LoungeBabe")
+				{
+					if (static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->m_currentPlayingAnimationGroup->m_name == "Shake")
+					{
+						static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->PlayAnimationByName("Lounge", 5);
+					}
+					else
+					{
+						static_cast<Actor*>(bulletRaycast.m_pointerToImpactedObject)->PlayAnimationByName("Shake", 10);
+					}
+				}
+				else
+				{
+					SpawnInfo impactSpawninfo;
+					impactSpawninfo.m_actorType = "BulletHit";
+					impactSpawninfo.m_position = bulletRaycast.m_impactPosition;
+					Actor* spawnedImpact = m_owner->m_map->SpawnActor(impactSpawninfo);
+
+					Vec3 forward = m_owner->m_orientation.GetForwardDir_IFwd_JLeft_KUp();
+					Vec3 left = forward.GetRotatedAboutZDegrees(90.f);
+					Vec3 up = CrossProduct3D(forward, left);
+					m_owner->AddImpulse(up * 3 );
+					m_owner->AddImpulse(-10.f * static_cast<PlayerController*>(m_owner->m_controller)->m_camera->GetOrientation().GetForwardDir_IFwd_JLeft_KUp());
+					m_owner->m_map->AddActorToMap(spawnedImpact);
+				}
+			}
 		if (m_name == "PlasmaRifle")
 		{
 			// replace getfwdIJK with origin to random point in cone normalized 
@@ -120,10 +186,12 @@ bool Weapon::Fire()
 			return true;
 		}
 	}
-	if(m_weaponTimer->IsStopped()) m_weaponTimer->Start();
 
+		if(m_weaponTimer->IsStopped()) m_weaponTimer->Start();
+
+	
+	}
 	return false;
-
 }
 
 Vec3 Weapon::GetRandomDirectionInCone(const WeaponDefinition definition) 

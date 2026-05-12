@@ -42,11 +42,13 @@ std::vector<TileDefinition*> TileDefinition::s_definitions;
 
 bool TileDefinition::LoadFromXmlElement(const XmlElement& element)
 {
-	m_name = ParseXmlAttribute(element, "name", m_name);
-	m_isSolid = ParseXmlAttribute(element, "isSolid", m_isSolid);
-	m_mapImagePixelColor = ParseXmlAttribute(element, "mapImagePixelColor", m_mapImagePixelColor);
-	m_floorSpriteCoords = ParseXmlAttribute(element, "floorSpriteCoords", m_floorSpriteCoords);
+	m_name				  = ParseXmlAttribute(element, "name", m_name);
+	m_isSolid			  = ParseXmlAttribute(element, "isSolid", false);
+	m_hasTop			  = ParseXmlAttribute(element, "hasTop", false);
+	m_hasBottom			  = ParseXmlAttribute(element, "hasBottom", false);
+	m_mapImagePixelColor  = ParseXmlAttribute(element, "mapImagePixelColor", m_mapImagePixelColor);
+	m_floorSpriteCoords   = ParseXmlAttribute(element, "floorSpriteCoords", m_floorSpriteCoords);
 	m_ceilingSpriteCoords = ParseXmlAttribute(element, "ceilingSpriteCoords", m_ceilingSpriteCoords);
-	m_wallSpriteCoords = ParseXmlAttribute(element, "wallSpriteCoords", m_wallSpriteCoords);
+	m_wallSpriteCoords    = ParseXmlAttribute(element, "wallSpriteCoords", m_wallSpriteCoords);
 	return true;
 }

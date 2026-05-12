@@ -6,13 +6,13 @@
 #include "Game/ActorDefinition.hpp"
 #include "Game/ActorHandle.hpp"
 
-
 class Game;
 class Map;
 class Controller;
 class Weapon;
 class AIController;
 class PlayerController;
+class Tile;
 
 class Actor
 {
@@ -59,6 +59,8 @@ public:
 	Vec3					m_acceleration		= Vec3(0,0,0);
 	bool					m_isDead			= false;
 	bool					m_isGarbage			= false;
+
+	const Tile*				m_tileObjActorOccupies = nullptr;
 
 	std::vector<Vertex>		m_verts;
 	std::vector<Weapon*>	m_inventory;

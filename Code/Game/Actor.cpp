@@ -6,6 +6,7 @@
 #include "Game/WeaponDefinition.hpp"
 #include "Game/Game.hpp"
 #include "Game/Map.hpp"
+#include "Game/GameCommon.hpp"
 #include "Engine/Math/Mat44.hpp"
 #include "Engine/Core/VertexUtils.hpp"
 #include "Engine/Core/Timer.hpp"
@@ -54,19 +55,21 @@ Actor::Actor(Map* map, Game* game, const ActorDefinition* actorDef)
 	{
 		m_isStatic = true;
 	}
-	if (m_definition->m_name == "Marine")
+	if (m_definition->m_name == "Marine" || m_definition->m_name == "LoungeBabe")
 	{
 		m_color = Rgba8(73, 188, 13);
 		AddVertsForMe();
 		m_animationClock = new Clock(*m_game->m_gameClock);
+		m_currentPlayingAnimationGroup = m_definition->m_animationGroups[0];
 		//m_aiController = new AIController();
 	}
-	if (m_definition->m_name == "Demon")
+	if (m_definition->m_name == "Pinky" || m_definition->m_name == "Cacodemon" || m_definition->m_name == "Nazi")
 	{
 		m_color = Rgba8(255,105,180);
 		AddVertsForMe();
 		m_animationClock = new Clock(*m_game->m_gameClock);
 		m_aiController = new AIController();
+		m_currentPlayingAnimationGroup = m_definition->m_animationGroups[0];
 	}
 	if (m_definition->m_name == "PlasmaProjectile")
 	{
@@ -175,13 +178,17 @@ void Actor::Render() const
 		if (player == nullptr) return;
 		if (!m_definition->m_isVisible) return;
 
-		if (m_controller == player && player->m_cameraMode) return;
+		if (m_controller == player && player->m_cameraMode == FPS) return;
 
 		Mat44 playerTransform = player->GetModelToWorldTransform();
 
-		if (player->m_cameraMode)
+		if (player->m_cameraMode == FPS)
 		{
 			playerTransform = player->GetActor()->GetModelToWorldTransform();
+		}
+		if (player->m_cameraMode == SKATER)
+		{
+			playerTransform = player->m_camera->GetCameraToWorldTransform();
 		}
 
 		Mat44 billboardMatrix;
@@ -379,18 +386,23 @@ void Actor::UpdateAnimation([[maybe_unused]]float deltaSeconds)
 		m_currentPlayingAnimationGroup = m_definition->m_animationGroups[0];
 	}
 
- 	if (m_animationClock->GetTotalSeconds() > m_currentPlayingAnimationGroup->GetDuration() && m_currentPlayingAnimationGroup->m_spriteAnimationDefinitions[0]->m_playbackMode != SpriteAnimPlaybackType::LOOP)
+	if (m_currentPlayingAnimationGroup->GetDuration() < m_animationClock->GetTotalSeconds() && m_currentPlayingAnimationGroup->m_spriteAnimationDefinitions[0]->m_playbackMode == SpriteAnimPlaybackType::PINGPONG)
+	{
+		m_currentPlayingAnimationGroup = m_definition->m_animationGroups[0];
+	}
+
+ 	if (m_currentPlayingAnimationGroup->m_name != "Death" && m_animationClock->GetTotalSeconds() > m_currentPlayingAnimationGroup->GetDuration() && m_currentPlayingAnimationGroup->m_spriteAnimationDefinitions[0]->m_playbackMode != SpriteAnimPlaybackType::LOOP)
  	{
-//  		if (m_queuedAnimation != nullptr)
-//  		{
-//  			PlayAnimationByName(m_queuedAnimation->m_name.c_str(), 1);
-//  			m_queuedAnimation = nullptr;
-//  		}
-//  		else
-//  		{
  			PlayAnimationByName("Walk", 0);
- 		//}
  	}
+
+	if (m_controller == static_cast<PlayerController*>(m_game->m_players[0]) && static_cast<PlayerController*>(m_game->m_players[0])->m_cameraMode == SKATER)
+	{
+		if (m_currentPlayingAnimationGroup->m_name != "Skate" || m_currentPlayingAnimationGroup->GetDuration() < m_animationClock->GetTotalSeconds())
+		{
+			PlayAnimationByName("Ride", 9);
+		}
+	}
 
 	if (m_currentPlayingAnimationGroup->m_scaleBySpeed)
 	{
@@ -431,6 +443,51 @@ Mat44 Actor::GetModelToWorldTransformYawOnly() const
 
 void Actor::UpdatePhysics(float deltaSeconds)
 {
+	// skate physics
+	if (static_cast<PlayerController*>(m_controller) != nullptr && static_cast<PlayerController*>(m_controller)->m_cameraMode == SKATER )
+	{
+		if (m_definition->m_physicsSimulated)
+		{	
+			float speed = m_velocity.GetLength();
+
+			if (speed > 0.1f)
+			{
+				Vec3 velDir = m_velocity.GetNormalized();
+				Vec3 friction = - velDir * SKATEDRAGVALUE;
+
+				Vec3 airDrag = -m_velocity * speed * SKATEAIRDRAGVALUE;
+
+				AddForce(friction + airDrag);
+			}
+
+			if (m_position.z > .3f)
+			{
+				AddForce(Vec3(0.f,0.f,-25.f));
+			}
+			else if (m_position.z < 0.0f)
+			{
+				m_position.z = 0.1f;
+				m_velocity.z = 0.1f;
+			}
+
+			m_velocity += (m_acceleration * deltaSeconds);
+
+// 			if (m_velocity.GetLengthSquared() > .1f)
+// 			{
+// 				PlayAnimationByName("Ride", 0);
+// 			}
+
+// 			if (m_velocity.GetLengthSquared() < .002f)
+// 			{
+// 				m_velocity = Vec3(0.f,0.f,0.f);
+// 			}
+
+			m_position += m_velocity * deltaSeconds;
+			m_acceleration = Vec3(0.f,0.f,0.f);
+		}
+	}
+	else
+
 	if (m_definition->m_physicsSimulated)
 	{
 		AddForce(- m_velocity * m_definition->m_drag);
@@ -440,7 +497,7 @@ void Actor::UpdatePhysics(float deltaSeconds)
 			m_velocity = Vec3(m_velocity.x,m_velocity.y,0.f);
 		}
 		m_velocity += (m_acceleration * deltaSeconds);
-		if (m_velocity.GetLengthSquared() > .1f)
+		if (m_velocity.GetLengthSquared() > .1f && m_aiController != nullptr)
 		{
 			PlayAnimationByName("Walk", 0);
 		}
@@ -535,7 +592,7 @@ void Actor::OnPossessed()
 	{
 		if (static_cast<PlayerController*>(m_controller) == player)
 		{
-			player->m_cameraMode = true;
+			player->m_cameraMode = CameraMode::FPS;
 			static_cast<PlayerController*>(m_controller)->m_position = m_position + Vec3(0.f, 0.f, m_definition->m_cameraEyeHeight);
 			static_cast<PlayerController*>(m_controller)->m_orientation = m_orientation;
 		}

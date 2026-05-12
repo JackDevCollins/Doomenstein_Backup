@@ -13,6 +13,7 @@
 #include "Engine/Math/MathUtils.hpp"
 #include "Engine/Core/ErrorWarningAssert.hpp"
 #include "Engine/Renderer/DebugRender.hpp"
+#include "Engine/Math/RandomNumberGenerator.hpp"
 
 
 
@@ -88,23 +89,66 @@ void Map::CreateGeometry()
 		{
 			TileDefinition* currentDef = TileDefinition::s_definitions[defIndex];
 
-			if (currentDef->m_mapImagePixelColor == tileColorAtImageIndex)
+			if (currentDef->m_mapImagePixelColor.r == tileColorAtImageIndex.r &&
+				currentDef->m_mapImagePixelColor.g == tileColorAtImageIndex.g &&
+				currentDef->m_mapImagePixelColor.b == tileColorAtImageIndex.b)
 			{
 				m_tiles[tileIndex].m_tileDefinition = currentDef;				// this seems like a way easier method of determining type type
-
-				if (currentDef->m_isSolid)
+				if (tileColorAtImageIndex.a != 255)
 				{
-					int wallSprite = (currentDef->m_wallSpriteCoords.y * m_definition->m_spriteSheetCellCount.x) + currentDef->m_wallSpriteCoords.x;
-					AddGeometryForWall(m_tiles[tileIndex].m_bounds, m_terrain->GetUVsForSprite(wallSprite));
-					break;
+					if (tileColorAtImageIndex.a == 100) // 1 tall
+					{
+						m_tiles[tileIndex].m_height = 1.00f;
+					}
+					if (tileColorAtImageIndex.a == 200) // 2 tall
+					{
+						m_tiles[tileIndex].m_height = 2.00f;
+					}
+					
+					for (int heightIndex = 0; heightIndex < m_tiles[tileIndex].m_height; ++heightIndex)
+					{
+						m_tiles[tileIndex].m_bounds.m_mins.z += (1.f * heightIndex);
+						m_tiles[tileIndex].m_bounds.m_maxs.z += (1.f * heightIndex);
+
+						if (currentDef->m_isSolid)
+						{
+							int wallSprite = (currentDef->m_wallSpriteCoords.y * m_definition->m_spriteSheetCellCount.x) + currentDef->m_wallSpriteCoords.x;
+							AddGeometryForWall(m_tiles[tileIndex].m_bounds, m_terrain->GetUVsForSprite(wallSprite));
+						}
+
+						if (currentDef->m_hasTop)
+						{
+							int ceilingSprite = (currentDef->m_ceilingSpriteCoords.y * m_definition->m_spriteSheetCellCount.x) + currentDef->m_ceilingSpriteCoords.x;
+							AddGeometryForCeiling(m_tiles[tileIndex].m_bounds, m_terrain->GetUVsForSprite(ceilingSprite));
+						}
+
+						if (currentDef->m_hasBottom)
+						{
+							int floorSprite = (currentDef->m_floorSpriteCoords.y * m_definition->m_spriteSheetCellCount.x) + currentDef->m_floorSpriteCoords.x;
+							AddGeometryForFloor(m_tiles[tileIndex].m_bounds, m_terrain->GetUVsForSprite(floorSprite));
+						}
+					}
 				}
-				int floorSprite = ( currentDef->m_floorSpriteCoords.y * m_definition->m_spriteSheetCellCount.x) + currentDef->m_floorSpriteCoords.x;
-				AddGeometryForFloor(m_tiles[tileIndex].m_bounds, m_terrain->GetUVsForSprite(floorSprite));
+				else
+				{
+					if (currentDef->m_isSolid)
+					{
+						int wallSprite = (currentDef->m_wallSpriteCoords.y * m_definition->m_spriteSheetCellCount.x) + currentDef->m_wallSpriteCoords.x;
+						AddGeometryForWall(m_tiles[tileIndex].m_bounds, m_terrain->GetUVsForSprite(wallSprite));
+					}
 
-				int ceilingSprite = ( currentDef->m_ceilingSpriteCoords.y * m_definition->m_spriteSheetCellCount.x) + currentDef->m_ceilingSpriteCoords.x;
-				AddGeometryForCeiling(m_tiles[tileIndex].m_bounds, m_terrain->GetUVsForSprite(ceilingSprite));
+					if (currentDef->m_hasTop)
+					{
+						int ceilingSprite = (currentDef->m_ceilingSpriteCoords.y * m_definition->m_spriteSheetCellCount.x) + currentDef->m_ceilingSpriteCoords.x;
+						AddGeometryForCeiling(m_tiles[tileIndex].m_bounds, m_terrain->GetUVsForSprite(ceilingSprite));
+					}
 
-				break;
+					if (currentDef->m_hasBottom)
+					{
+						int floorSprite = (currentDef->m_floorSpriteCoords.y * m_definition->m_spriteSheetCellCount.x) + currentDef->m_floorSpriteCoords.x;
+						AddGeometryForFloor(m_tiles[tileIndex].m_bounds, m_terrain->GetUVsForSprite(floorSprite));
+					}
+				}
 			}
 		}	
 	}
@@ -216,6 +260,8 @@ void Map::Update(float deltaSeconds)
 			CreatePlayerActor(player);
 		}
 	}
+
+	AddMoreBoys();
 }
 
 void Map::CollideActors()
@@ -256,6 +302,19 @@ void Map::CollideActors(Actor* actorA, Actor* actorB)
 		DebuggerPrintf("COLLIDE");
 		actorA->OnCollide(actorB->m_handle);
 		actorB->OnCollide(actorA->m_handle);
+
+		if ((((((static_cast<PlayerController*>(actorA->m_controller) == m_game->m_players[0]) && actorB->m_definition->m_name == "Nazi")))) || ((((static_cast<PlayerController*>(actorB->m_controller) == m_game->m_players[0]) && actorA->m_definition->m_name == "Nazi"))))
+		{
+			
+			if (actorB->m_definition->m_name == "Nazi" && static_cast<PlayerController*>(actorA->m_controller)->m_cameraMode == SKATER)
+			{
+				actorB->m_health = 0;
+			}
+			if (actorA->m_definition->m_name == "Nazi" && static_cast<PlayerController*>(actorB->m_controller)->m_cameraMode == SKATER)
+			{
+				actorA->m_health = 0;
+			}
+		}
 	}
 
 // 	if (DoDiscsOverlap(actorAXYPosition, actorA->m_physicsRadius,
@@ -317,7 +376,8 @@ void Map::CollideActorWithMap(Actor* actor)
 
 	bool	collided = false;
 	IntVec2 tileCoordsActorOccupies			= IntVec2(RoundDownToInt(actor->m_position.x),RoundDownToInt(actor->m_position.y));
-	//const Tile*	tileObjectActorOccupies		= GetTile(tileCoordsActorOccupies.x,tileCoordsActorOccupies.y);
+	const Tile*	tileObjectActorOccupies		= GetTile(tileCoordsActorOccupies.x,tileCoordsActorOccupies.y);
+	actor->m_tileObjActorOccupies = tileObjectActorOccupies;
 	IntVec2 positionNorth	  = tileCoordsActorOccupies + IntVec2(0, 1);
 	IntVec2 positionEast	  = tileCoordsActorOccupies + IntVec2(1, 0);
 	IntVec2 positionSouth	  = tileCoordsActorOccupies + IntVec2(0, -1);
@@ -374,16 +434,16 @@ void Map::CollideActorWithMap(Actor* actor)
 
 
 	// z check 
-	if (actor->m_position.z < 0.f)
+	if (actor->m_position.z < actor->m_tileObjActorOccupies->m_height)
 	{
-		actor->m_position.z = 0.f;
+		actor->m_position.z = actor->m_tileObjActorOccupies->m_height;
 		collided = true;
 	}
-	if (actor->m_position.z + actor->m_physicsHeight > 1.f)
-	{
-		actor->m_position.z = 1.f - actor->m_physicsHeight;
-		collided = true;
-	}
+// 	if (actor->m_position.z + actor->m_physicsHeight > 1.f)
+// 	{
+// 		actor->m_position.z = 1.f - actor->m_physicsHeight;
+// 		collided = true;
+// 	}
 
 	if (collided)
 	{
@@ -559,6 +619,39 @@ Actor* Map::GetClosestVisibleEnemy(ActorHandle actorHandle)
 	return nullptr;
 }
 
+void Map::AddMoreBoys()
+{
+	int numberOfBoys = 0;
+
+	for (int index = 0; index < m_actors.size(); ++index)
+	{
+		if (m_actors[index] != nullptr)
+		{
+			if (m_actors[index]->m_definition->m_name == "Nazi" || m_actors[index]->m_definition->m_name == "Cacodemon")
+			{
+				++numberOfBoys;
+			}
+		}
+		if (numberOfBoys < 4)
+		{
+			SpawnInfo newSpawn;
+			newSpawn.m_actorType = "Nazi";
+			int randomx = RollRandomIntInRange(0 + 1, m_dimensions.x -1);
+			int randomy = RollRandomIntInRange(0 + 1, m_dimensions.y -1);
+			newSpawn.m_position = Vec3(randomx, randomy, .1f);
+			newSpawn.m_orientation = EulerAngles((float)RollRandomIntInRange(0, 360), 0.f, 0.f);
+
+			SpawnInfo newSpawn2;
+			newSpawn2.m_actorType = "Nazi";
+			newSpawn2.m_position = Vec3(25.f, 25.f, .1f);
+			newSpawn2.m_orientation = EulerAngles((float)RollRandomIntInRange(0, 360), 0.f, 0.f);
+
+			AddActorToMap(SpawnActor(newSpawn));
+			AddActorToMap(SpawnActor(newSpawn2));
+		}
+	}
+}
+
 void Map::Render()
 {
 	g_engine->m_render->SetBlendMode(BlendMode::OPAQUE);
@@ -584,6 +677,13 @@ RaycastResult3D Map::RaycastAll(const Vec3& start, const Vec3& direction, float 
 	float lowestDistance = 100000000.f;
 	int lowestIndex = -1;
 
+	if (start.x > m_dimensions.x || start.y > m_dimensions.y)
+	{
+		RaycastResult3D miss;
+		miss.m_didImpact = false;
+		return miss;
+	}
+
 	RaycastResult3D XYResult	= RaycastWorldXY(start, direction, distance);
 	RaycastResult3D ZResult		= RaycastWorldZ(start, direction, distance);
 	RaycastResult3D ActorResult = RaycastWorldActors(start, direction, distance, owner);
@@ -607,7 +707,16 @@ RaycastResult3D Map::RaycastAll(const Vec3& start, const Vec3& direction, float 
 			continue;
 		}
 	}
-	return results[lowestIndex];
+	if (lowestIndex != -1)
+	{
+		return results[lowestIndex];
+	}
+	else
+	{
+		RaycastResult3D miss;
+		miss.m_didImpact = false;
+		return miss;
+	}
 }
 
 RaycastResult3D Map::RaycastWorldXY(const Vec3& start, const Vec3& direction, float distance) const
@@ -622,7 +731,7 @@ RaycastResult3D Map::RaycastWorldXY(const Vec3& start, const Vec3& direction, fl
 	int tileY = int( floor(start.y));
 	startTile = IntVec2(tileX,tileY);
 
-	if (GetTile(tileX,tileY)->m_tileDefinition->m_isSolid)
+	if (GetTile(tileX,tileY) != nullptr && GetTile(tileX,tileY)->m_tileDefinition->m_isSolid)
 	{
 		result.m_didImpact = true;
 		result.m_impactDistance = 0.f;
@@ -744,7 +853,7 @@ RaycastResult3D Map::RaycastWorldZ(const Vec3& start, const Vec3& direction, flo
 
 	if (result.m_rayDirection.z > 0)
 	{
-		auto t = (1 - start.z) / (result.m_rayDirection.z * distance);
+		auto t = (10 - start.z) / (result.m_rayDirection.z * distance);
 		if (t > 0 && t < 1)
 		{
 			result.m_didImpact = true;

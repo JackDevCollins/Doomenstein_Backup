@@ -85,5 +85,10 @@ const SpriteAnimDefinition& SpriteAnimationGroupDefinition::GetAnimationForDirec
 
 float SpriteAnimationGroupDefinition::GetDuration() const
 {
-	return m_spriteAnimationDefinitions.size() * m_spriteAnimationDefinitions[0]->m_secondsPerFrame;
+	int animationFrames = (m_spriteAnimationDefinitions[0]->m_endSpriteIndex - m_spriteAnimationDefinitions[0]->m_startSpriteIndex);
+	if (animationFrames <= 0)
+	{
+		animationFrames = 1;
+	}
+	return animationFrames * m_spriteAnimationDefinitions[0]->m_secondsPerFrame;
 }

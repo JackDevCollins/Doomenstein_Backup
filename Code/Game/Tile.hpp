@@ -11,4 +11,5 @@ public:
 
 	AABB3				m_bounds;
 	TileDefinition*		m_tileDefinition = nullptr;
+	float				m_height = 0.f;
 };
